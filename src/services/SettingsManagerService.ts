@@ -1,12 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { getServerIp } from "../utils";
-
-export interface Settings {
-  isDiscoverable: boolean;
-  serverIp: string;
-  serverPort: number;
-}
+import { Settings } from "../types";
 
 export class SettingsManager {
   public settingsPath: string;

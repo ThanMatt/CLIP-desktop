@@ -20,3 +20,19 @@ export interface Settings {
   serverIp: string;
   serverPort: number;
 }
+
+export interface ActiveServer {
+  id: string;
+  ip: string;
+  port: number;
+  deviceName: string;
+  lastSeen: number;
+}
+
+export interface Announcement {
+  service: string;
+  type: string;
+  deviceName: string;
+  port: number;
+  timestamp: number;
+}

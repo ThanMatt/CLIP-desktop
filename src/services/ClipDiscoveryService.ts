@@ -2,22 +2,7 @@ import dgram from "dgram";
 import os from "os";
 import { SettingsManager } from "../services/SettingsManagerService";
 import { getServerIp } from "../utils";
-
-export interface ActiveServer {
-  id: string;
-  ip: string;
-  port: number;
-  deviceName: string;
-  lastSeen: number;
-}
-
-export interface Announcement {
-  service: string;
-  type: string;
-  deviceName: string;
-  port: number;
-  timestamp: number;
-}
+import { Announcement, ActiveServer } from "../types";
 
 export class ClipDiscoveryService {
   public MULTICAST_ADDR: string;

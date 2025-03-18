@@ -1,8 +1,7 @@
 import { ShareContentCard } from "./components/ShareContentCard";
 import { ServerSelectionCard } from "./components/ServerSelectionCard";
 import { useEffect, useState } from "react";
-import { Server, Settings } from "./types";
-import axiosInstance from "./config/axios";
+import { Server, Settings } from "../types";
 
 function App() {
   const [targetServer, setTargetServer] = useState<Server | null>(null);
@@ -10,9 +9,9 @@ function App() {
 
   useEffect(() => {
     const getSettings = async () => {
-      const response = await axiosInstance.get<Settings>("/api/settings");
+      const response = await window.api.getSettings();
 
-      setSettings(response.data);
+      setSettings(response);
     };
 
     getSettings();
@@ -26,9 +25,7 @@ function App() {
     try {
       setSettings(updatedSettings);
 
-      await axiosInstance.patch("/api/settings", {
-        settings: updatedSettings,
-      });
+      await window.api.updateSettings(updatedSettings);
     } catch (error) {
       setSettings(settings);
     }

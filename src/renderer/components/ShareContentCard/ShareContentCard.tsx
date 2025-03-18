@@ -23,7 +23,7 @@ import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { isAxiosError } from "axios";
 import { useForm } from "react-hook-form";
-import { Server } from "@/types";
+import {Server} from '../../../types'
 
 const schema = zod.object({
   content: zod.string().refine((value) => value.trim().length > 0, {
@@ -75,7 +75,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     try {
       await axios.post(
         targetServer ? `${server}/api/text` : `${server}/api/content`,
-        {
+        axios{
           content: values.content,
         },
         {
