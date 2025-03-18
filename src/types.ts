@@ -36,3 +36,10 @@ export interface Announcement {
   port: number;
   timestamp: number;
 }
+
+export type Callback<T> = (data: T) => void;
+
+export interface TextPayload {
+  content: string;
+  deviceName?: string;
+}
