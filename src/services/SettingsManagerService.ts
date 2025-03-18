@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { getServerIp } from "./utils/getServerIp";
+import { getServerIp } from "../utils";
 
 export interface Settings {
   isDiscoverable: boolean;

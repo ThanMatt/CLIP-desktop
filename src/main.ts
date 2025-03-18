@@ -290,10 +290,24 @@ app.on("ready", () => {
   });
 });
 
+// :: Handle second instance
+app.on("second-instance", (event, commandLine, workingDirectory) => {
+  // :: Someone tried to run a second instance, focus our window instead
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+// :: Clean up on quit
+app.on("will-quit", () => {
+  discoveryService.stop();
 });
 
 app.on("activate", () => {

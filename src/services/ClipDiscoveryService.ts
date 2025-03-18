@@ -1,7 +1,7 @@
 import dgram from "dgram";
 import os from "os";
-import { SettingsManager } from "../settings";
-import { getServerIp } from "../utils/getServerIp";
+import { SettingsManager } from "../services/SettingsManagerService";
+import { getServerIp } from "../utils";
 
 export interface ActiveServer {
   id: string;
