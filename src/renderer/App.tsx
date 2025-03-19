@@ -10,7 +10,6 @@ function App() {
   useEffect(() => {
     const getSettings = async () => {
       const response = await window.api.getSettings();
-      console.log("🚀 ~ getSettings ~ response:", response);
 
       setSettings(response);
     };
@@ -24,7 +23,6 @@ function App() {
 
   const handleChangeSettings = async (updatedSettings: Settings) => {
     try {
-      console.log("SETTINGS CHANGED", updatedSettings);
       setSettings(updatedSettings);
 
       await window.api.updateSettings(updatedSettings);
@@ -33,7 +31,6 @@ function App() {
     }
   };
 
-  console.log("Settings :", settings);
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto space-y-4">

@@ -76,8 +76,8 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
       setSuccess(true);
       setLoading(false);
     } catch (error) {
-      console.error(error);
-      let message = "There was an error";
+      console.error(error.message);
+      let message = error.message;
       if (isAxiosError(error)) {
         message = error?.response
           ? error.response.data.message

@@ -16,7 +16,7 @@ import {
   isYoutubeUrl,
 } from "./utils";
 import { ClipService } from "./services/ClipService";
-import { Server } from "./types";
+import { Server, Settings } from "./types";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -185,7 +185,7 @@ function setupIpcHandlers() {
   });
 
   // :: Update settings
-  ipcMain.handle("update-settings", async (event, settings) => {
+  ipcMain.handle("update-settings", async (event, settings: Settings) => {
     const { isDiscoverable } = settings;
     return await discoveryService.setDiscoverable(isDiscoverable);
   });
@@ -208,6 +208,8 @@ function setupIpcHandlers() {
       );
       currentSession = null;
       return true;
+    } else {
+      throw new Error("No current session found");
     }
   });
   // :: Send content to other CLIP server

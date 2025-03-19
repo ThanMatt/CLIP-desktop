@@ -6,12 +6,16 @@ import {
   Callback,
   RespondContentToDevicePayload,
   SendContentToServerPayload,
+  Settings,
   TextPayload,
 } from "./types";
 
 contextBridge.exposeInMainWorld("api", {
   getServers: () => ipcRenderer.invoke("get-servers"),
   getSettings: () => ipcRenderer.invoke("get-settings"),
+  updateSettings: (payload: Settings) => {
+    return ipcRenderer.invoke("update-settings", payload);
+  },
   copyToClipboard: (text: string) => {
     return ipcRenderer.invoke("copy-to-clipboard", text);
   },
