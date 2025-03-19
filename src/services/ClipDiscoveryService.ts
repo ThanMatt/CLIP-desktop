@@ -2,19 +2,19 @@ import dgram from "dgram";
 import os from "os";
 import { SettingsManager } from "../services/SettingsManagerService";
 import { getServerIp } from "../utils";
-import { Announcement, ActiveServer } from "../types";
+import { Announcement, Server } from "../types";
 
 export class ClipDiscoveryService {
   public MULTICAST_ADDR: string;
   public DISCOVERY_PORT: number;
   public serverPort: number;
   public deviceName: string;
-  public activeServers: Map<string, ActiveServer>;
+  public activeServers: Map<string, Server>;
   public settingsManager: SettingsManager;
   public socket: dgram.Socket;
   public broadcastInterval: NodeJS.Timeout;
   public cleanupInterval: NodeJS.Timeout;
-  public onServersUpdated: (servers: ActiveServer[]) => void;
+  public onServersUpdated: (servers: Server[]) => void;
 
   constructor(serverPort: number, deviceName = os.hostname()) {
     this.MULTICAST_ADDR = "239.255.255.250";
@@ -158,7 +158,7 @@ export class ClipDiscoveryService {
   }
 
   // :: Set callback for server list updates
-  setServersUpdatedCallback(callback: (servers: ActiveServer[]) => void) {
+  setServersUpdatedCallback(callback: (servers: Server[]) => void) {
     this.onServersUpdated = callback;
   }
 }

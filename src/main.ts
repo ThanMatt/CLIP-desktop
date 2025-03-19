@@ -6,8 +6,7 @@ import morgan from "morgan";
 import cors from "cors";
 import multer from "multer";
 import fs from "fs";
-import notifier from "node-notifier";
-import { exec } from "node:child_process";
+import os from "os";
 import { ClipDiscoveryService } from "./services/ClipDiscoveryService";
 import { SettingsManager } from "./services/SettingsManagerService";
 import {
@@ -17,6 +16,7 @@ import {
   isYoutubeUrl,
 } from "./utils";
 import { ClipService } from "./services/ClipService";
+import { Server } from "./types";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -93,7 +93,7 @@ function setupExpressRoutes() {
     return res.json({ servers });
   });
 
-  // :: Receive text
+  // :: Receive text FROM phone devices or clip servers
   expressApp.post("/api/text", (req, res) => {
     const { content } = req.body;
     const deviceName = req.body.device_name ?? "Device";
@@ -114,14 +114,18 @@ function setupExpressRoutes() {
     }, TIMEOUT);
   });
 
-  // :: Receive content for long polling
+  // :: Send content to phones
   expressApp.post("/api/content", (req, res) => {
     const { content } = req.body;
 
     if (currentSession) {
       const clipService = new ClipService(mainWindow);
 
-      clipService.processUrlContent(content, currentSession, pollingRequest);
+      clipService.respondContentToDevice(
+        content,
+        currentSession,
+        pollingRequest
+      );
       currentSession = null;
       return res.status(200).json({ success: true });
     }
@@ -191,6 +195,62 @@ function setupIpcHandlers() {
     clipboard.writeText(text);
     return true;
   });
+
+  // :: Invoked by the app
+  ipcMain.handle("respond-content-to-device", (_, content: string) => {
+    if (currentSession) {
+      const clipService = new ClipService(mainWindow);
+
+      clipService.respondContentToDevice(
+        content,
+        currentSession,
+        pollingRequest
+      );
+      currentSession = null;
+      return true;
+    }
+  });
+  // :: Send content to other CLIP server
+  ipcMain.handle(
+    "send-content-to-server",
+    async (
+      _,
+      {
+        server,
+        content,
+      }: {
+        server: Server;
+        content: string;
+      }
+    ) => {
+      try {
+        const deviceName = os.hostname();
+        const serverUrl = `http://${server.ip}:${server.port}`;
+
+        const response = await fetch(`${serverUrl}/api/text`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content,
+            device_name: deviceName,
+          }),
+        });
+
+        await response.json();
+
+        return true;
+      } catch (error) {
+        console.error(error);
+        throw new Error(
+          `There was an error sending an API request to another CLIP server: ${JSON.stringify(
+            error
+          )}`
+        );
+      }
+    }
+  );
 }
 
 app.on("ready", () => {

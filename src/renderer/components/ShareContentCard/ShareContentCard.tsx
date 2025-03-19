@@ -23,7 +23,7 @@ import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { isAxiosError } from "axios";
 import { useForm } from "react-hook-form";
-import {Server} from '../../../types'
+import { Server } from "../../../types";
 
 const schema = zod.object({
   content: zod.string().refine((value) => value.trim().length > 0, {
@@ -64,27 +64,15 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     setLoading(true);
     setSuccess(false);
 
-    let server: string;
-
-    if (targetServer) {
-      server = `http://${targetServer.ip}:${targetServer.port}`;
-    } else {
-      server = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
-    }
-
     try {
-      await axios.post(
-        targetServer ? `${server}/api/text` : `${server}/api/content`,
-        axios{
+      if (targetServer) {
+        await window.api.sendContentToServer({
           content: values.content,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
+          server: targetServer,
+        });
+      } else {
+        await window.api.respondContentToDevice({ content: values.content });
+      }
       setSuccess(true);
       setLoading(false);
     } catch (error) {

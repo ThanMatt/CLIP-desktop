@@ -40,7 +40,7 @@ export class ClipService {
 
     console.log("Notification sent!");
   }
-  processUrlContent(
+  respondContentToDevice(
     content: string,
     currentSession: NodeJS.Timeout,
     pollingRequest: { res: Response }

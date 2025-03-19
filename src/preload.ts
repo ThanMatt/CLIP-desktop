@@ -2,7 +2,12 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from "electron";
-import { Callback, TextPayload } from "./types";
+import {
+  Callback,
+  RespondContentToDevicePayload,
+  SendContentToServerPayload,
+  TextPayload,
+} from "./types";
 
 contextBridge.exposeInMainWorld("api", {
   getServers: () => ipcRenderer.invoke("get-servers"),
@@ -23,5 +28,11 @@ contextBridge.exposeInMainWorld("api", {
   },
   onServersUpdated: (callback: Callback<TextPayload>) => {
     ipcRenderer.on("servers-updated", (event, servers) => callback(servers));
+  },
+  respondContentToDevice: (payload: RespondContentToDevicePayload) => {
+    return ipcRenderer.invoke("respond-content-to-device", payload);
+  },
+  sendContentToServer: (payload: SendContentToServerPayload) => {
+    return ipcRenderer.invoke("send-content-to-server", payload);
   },
 });
