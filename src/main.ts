@@ -16,6 +16,7 @@ import {
   isRedditUrl,
   isYoutubeUrl,
 } from "./utils";
+import { ClipService } from "./services/ClipService";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -96,31 +97,9 @@ function setupExpressRoutes() {
   expressApp.post("/api/text", (req, res) => {
     const { content } = req.body;
     const deviceName = req.body.device_name ?? "Device";
+    const clipService = new ClipService(mainWindow);
 
-    console.log(`Data received from ${deviceName}: ${req.body}`);
-
-    // :: Write to clipboard
-    clipboard.writeText(content);
-
-    // :: Send notification
-    notifier.notify({
-      title: `New content from ${deviceName}`,
-      message: `Content: ${content}`,
-    });
-
-    // :: Notify renderer process
-    if (mainWindow) {
-      mainWindow.webContents.send("text-received", { content, deviceName });
-    }
-
-    // :: Open URL if it's a link
-    if (content.startsWith("https") || content.startsWith("http")) {
-      console.log("Link detected, opening the url in your default browser!");
-      shell.openExternal(content);
-    }
-
-    console.log("Notification sent!");
-    return res.status(200).json({ success: true });
+    return clipService.receiveTextContent(content, deviceName);
   });
 
   // :: Long polling
@@ -138,32 +117,12 @@ function setupExpressRoutes() {
   // :: Receive content for long polling
   expressApp.post("/api/content", (req, res) => {
     const { content } = req.body;
-    let urlScheme = null;
 
     if (currentSession) {
-      console.log("Payload received");
-      console.log("Payload: ", content);
+      const clipService = new ClipService(mainWindow);
 
-      if (isYoutubeUrl(content)) {
-        urlScheme = generateUrlScheme(content, "youtube");
-      } else if (isRedditUrl(content)) {
-        urlScheme = generateUrlScheme(content, "reddit");
-      }
-
-      console.log("url scheme: ", urlScheme);
-      clearTimeout(currentSession);
+      clipService.processUrlContent(content, currentSession, pollingRequest);
       currentSession = null;
-
-      if (!content) pollingRequest.res.status(200).json({ success: false });
-      pollingRequest.res
-        .status(200)
-        .json({ content, ...(urlScheme && { urlScheme }) });
-
-      // :: Notify renderer process
-      if (mainWindow) {
-        mainWindow.webContents.send("content-received", { content, urlScheme });
-      }
-
       return res.status(200).json({ success: true });
     }
 
@@ -173,70 +132,26 @@ function setupExpressRoutes() {
   });
 
   // :: Receive image
-  expressApp.post("/api/image", upload.single("file"), (req, res) => {
+  expressApp.post("/api/image", upload.single("file"), async (req, res) => {
     const deviceName = req.body.device_name ?? "Device";
 
     if (req.file) {
-      console.log(
-        `File from ${deviceName} has been uploaded successfully: ${req.file}`
-      );
+      const clipService = new ClipService(mainWindow);
 
-      const imagePath = path.join(
-        app.getPath("userData"),
-        "uploads",
-        req.file.originalname
-      );
-      console.log(imagePath);
-
-      // :: Copy image to clipboard based on platform
-      let command;
-      switch (process.platform) {
-        case "win32":
-          // :: Use Electron's clipboard API for images
-          try {
-            const nativeImage =
-              require("electron").nativeImage.createFromPath(imagePath);
-            clipboard.writeImage(nativeImage);
-            if (mainWindow) {
-              mainWindow.webContents.send("image-received", {
-                path: imagePath,
-                deviceName,
-              });
-            }
-            return res.status(200).json({ success: true });
-          } catch (error) {
-            console.error(error);
-            return res.status(500).json({ success: false });
-          }
-        case "darwin":
-          command = `osascript -e 'tell application "Finder" to set the clipboard to ( POSIX file "${imagePath}" )'`;
-          break;
-        case "linux":
-          command = `xclip -selection clipboard -t image/png -i ${imagePath}`;
-          break;
-        default:
-          return res.status(500).send("Unsupported OS");
+      try {
+        await clipService.processImageContent(
+          req.file,
+          deviceName,
+          app.getPath("userData")
+        );
+      } catch (error) {
+        return res.status(500).json({ success: false });
       }
 
-      exec(command, (error) => {
-        if (error) {
-          console.error(error);
-          return res.status(500).json({ success: false });
-        }
-
-        // Notify renderer process
-        if (mainWindow) {
-          mainWindow.webContents.send("image-received", {
-            path: imagePath,
-            deviceName,
-          });
-        }
-
-        return res.status(200).json({ success: true });
-      });
+      return res.status(200).json({ success: true });
     } else {
       console.log(`No file from ${deviceName} uploaded`);
-      res.status(400).json({ success: false });
+      return res.status(400).json({ success: false });
     }
   });
 

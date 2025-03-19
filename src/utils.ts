@@ -91,29 +91,3 @@ export function getServerIp() {
 
   return "127.0.0.1"; // :: Fallback to localhost if no suitable interface found
 }
-
-export default function receiveText(content: string, deviceName: string) {
-  console.log(`Data received from ${deviceName}: ${content}`);
-
-  // :: Write to clipboard
-  clipboard.writeText(content);
-
-  // :: Send notification
-  notifier.notify({
-    title: `New content from ${deviceName}`,
-    message: `Content: ${content}`,
-  });
-
-  // :: Notify renderer process
-  if (mainWindow) {
-    mainWindow.webContents.send("text-received", { content, deviceName });
-  }
-
-  // :: Open URL if it's a link
-  if (content.startsWith("https") || content.startsWith("http")) {
-    console.log("Link detected, opening the url in your default browser!");
-    shell.openExternal(content);
-  }
-
-  console.log("Notification sent!");
-}
