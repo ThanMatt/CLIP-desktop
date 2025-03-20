@@ -1,6 +1,6 @@
 {
   "name": "clip-desktop",
-  "productName": "CLIP Desktop",
+  "productName": "clip-desktop",
   "version": "0.1.0-alpha.6",
   "description": "CLIP Desktop lets you transfer texts and links from a Windows/Linux PC to an iPhone's clipboard, similar to Apple's AirDrop.",
   "main": ".vite/build/main.js",

@@ -72,6 +72,7 @@ const settingsManager = new SettingsManager();
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    title: "CLIP Desktop by Thanmatt",
     width: 800,
     height: 600,
     webPreferences: {
