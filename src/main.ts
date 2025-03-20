@@ -1,4 +1,12 @@
-import { app, BrowserWindow, clipboard, ipcMain, Menu, Tray } from "electron";
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  ipcMain,
+  Menu,
+  Notification,
+  Tray,
+} from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 import express, { Response } from "express";
@@ -69,6 +77,7 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
+    icon: "../assets/icons/icon.png",
   });
 
   // and load the index.html of the app.
@@ -198,8 +207,14 @@ function setupExpressRoutes() {
       return res.status(400).json({ success: false });
     }
   });
-  expressApp.get("/api/client", (req, res) => {
+  expressApp.post("/api/client", (req, res) => {
     // :: Open client application
+    const { device_name = "Unnamed device" } = req.body;
+
+    new Notification({
+      title: `Opened by device ${device_name}`,
+      body: "This device is requesting content",
+    }).show();
     if (mainWindow.isMinimized()) mainWindow.restore();
     if (!mainWindow.isVisible()) mainWindow.show();
     mainWindow.focus();
