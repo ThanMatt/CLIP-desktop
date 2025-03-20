@@ -34,8 +34,6 @@ jobs:
           name: ${{ matrix.os }}-build
           path: |
             out/make/**/*.exe
-            out/make/**/*.msi
-            out/make/**/*.dmg
             out/make/**/*.zip
             out/make/**/*.deb
             out/make/**/*.rpm
@@ -43,6 +41,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
@@ -55,8 +55,8 @@ jobs:
         with:
           files: |
             artifacts/**/*.exe
-            artifacts/**/*.msi
-            artifacts/**/*.dmg
             artifacts/**/*.zip
             artifacts/**/*.deb
             artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
