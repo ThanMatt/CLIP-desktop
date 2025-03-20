@@ -40,8 +40,8 @@ const ServerSelectionCard = ({
     return () => clearInterval(interval);
   }, [isScanning]);
 
-  const handleSelectServer = (server: Server) => {
-    if (server.id === selectedServer?.id && selectedServer) {
+  const handleSelectServer = (server: Server | null) => {
+    if (server?.id === selectedServer?.id && selectedServer) {
       onTargetServer(null);
       setSelectedServer(null);
     } else {
@@ -98,6 +98,18 @@ const ServerSelectionCard = ({
       clearInterval(pollInterval);
     };
   }, []);
+
+  useEffect(() => {
+    if (selectedServer) {
+      const selectedStillExist = servers.find((server) => {
+        return server?.id === selectedServer.id;
+      });
+
+      if (!selectedStillExist) {
+        handleSelectServer(null);
+      }
+    }
+  }, [servers]);
 
   return (
     <Card>

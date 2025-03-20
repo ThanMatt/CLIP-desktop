@@ -198,6 +198,13 @@ function setupExpressRoutes() {
       return res.status(400).json({ success: false });
     }
   });
+  expressApp.get("/api/client", (req, res) => {
+    // :: Open client application
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
+    mainWindow.focus();
+    res.status(200).json({ success: true });
+  });
 }
 
 // :: IPC handlers for renderer process communication
