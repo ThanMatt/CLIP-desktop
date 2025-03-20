@@ -10,12 +10,27 @@ function App() {
   useEffect(() => {
     const getSettings = async () => {
       const response = await window.api.getSettings();
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      const savedTheme = response.data.darkMode ? "dark" : "";
 
+      if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      }
       setSettings(response.data);
     };
 
     getSettings();
   }, []);
+
+  useEffect(() => {
+    if (settings?.darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [settings]);
 
   const handleTargetServer = (server: Server | null) => {
     setTargetServer(server);
@@ -32,7 +47,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-background p-4">
       <div className="max-w-6xl mx-auto space-y-4">
         <ServerSelectionCard
           onTargetServer={handleTargetServer}

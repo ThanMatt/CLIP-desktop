@@ -16,13 +16,17 @@ export class ClipDiscoveryService {
   public cleanupInterval: NodeJS.Timeout;
   public onServersUpdated: (servers: Server[]) => void;
 
-  constructor(serverPort: number, deviceName = os.hostname()) {
+  constructor(
+    serverPort: number,
+    settingsManager: SettingsManager,
+    deviceName = os.hostname()
+  ) {
     this.MULTICAST_ADDR = "239.255.255.250";
     this.DISCOVERY_PORT = 1900;
     this.serverPort = serverPort;
     this.deviceName = deviceName;
     this.activeServers = new Map(); // :: Store discovered servers
-    this.settingsManager = new SettingsManager();
+    this.settingsManager = settingsManager;
     this.socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
     this.setupSocket();
   }

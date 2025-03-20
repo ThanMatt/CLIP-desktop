@@ -7,13 +7,14 @@ import {
   CardDescription,
   CardContent,
 } from "../ui/card";
-import { RefreshCcw, Wifi } from "lucide-react";
+import { RefreshCcw, Settings as SettingsIcon, Wifi } from "lucide-react";
 import { Server, Settings } from "../../../types";
 import { Subtle } from "../ui/typography";
 import { ServerButton } from "../ServerButton";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { cn } from "@/lib/utils";
+import { SettingsPopover } from "../SettingsPopover";
 
 type ServerSelectionCardProps = {
   onTargetServer: (server: Server | null) => void;
@@ -166,6 +167,17 @@ const ServerSelectionCard = ({
                 className={cn("h-4 w-4", isScanning ? "animate-spin" : "")}
               />
             </Button>
+            <SettingsPopover
+              settings={settings}
+              onCheckedChange={(settingName, value) => {
+                if (settings) {
+                  onChangeSettings({
+                    ...settings,
+                    [settingName]: value,
+                  });
+                }
+              }}
+            />
           </div>
         </div>
       </CardHeader>
