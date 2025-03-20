@@ -19,6 +19,9 @@ export interface Settings {
   isDiscoverable: boolean;
   serverIp: string;
   serverPort: number;
+  launchOnStartup: boolean;
+  darkMode: boolean;
+  errorLogging: boolean;
 }
 
 export interface Announcement {

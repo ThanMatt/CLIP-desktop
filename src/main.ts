@@ -4,6 +4,7 @@ import {
   clipboard,
   ipcMain,
   Menu,
+  nativeTheme,
   Notification,
   Tray,
 } from "electron";
@@ -66,8 +67,12 @@ const TIMEOUT = 30000;
 let mainWindow: BrowserWindow;
 let tray;
 
-const discoveryService = new ClipDiscoveryService(port);
 const settingsManager = new SettingsManager();
+const discoveryService = new ClipDiscoveryService(port, settingsManager);
+
+app.setLoginItemSettings({
+  openAtLogin: settingsManager.getLaunchOnStartup(),
+});
 
 const createWindow = () => {
   // Create the browser window.
@@ -250,14 +255,16 @@ function setupIpcHandlers() {
     "update-settings",
     async (event, settings: Settings): Promise<IpcResponse<boolean>> => {
       try {
-        const { isDiscoverable } = settings;
-
-        const response = await discoveryService.setDiscoverable(isDiscoverable);
+        await settingsManager.updateSettings(settings);
+        const theme = settings.darkMode ? "dark" : "light";
+        nativeTheme.themeSource = theme;
+        app.setLoginItemSettings({
+          openAtLogin: settings.launchOnStartup,
+        });
 
         return {
           success: true,
           message: "Success",
-          data: response,
         };
       } catch (error) {
         throw error;
@@ -347,10 +354,12 @@ function setupIpcHandlers() {
   );
 }
 
-app.on("ready", () => {
+app.on("ready", async () => {
+  await settingsManager.load();
   createWindow();
   setupExpressRoutes();
   setupIpcHandlers();
+  nativeTheme.themeSource = settingsManager.getDarkMode() ? "dark" : "light";
 
   expressApp.listen(port, () => {
     const ipAddress = getServerIp();

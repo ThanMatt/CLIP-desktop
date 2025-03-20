@@ -21,7 +21,7 @@ const ServerButton = ({
       className={cn(
         "w-full justify-start h-auto py-3",
         selectedServer?.id === server.id
-          ? "border-primary bg-primary-foreground"
+          ? "border-primary bg-accent text-accent-foreground"
           : ""
       )}
       onClick={() => onSelectServer(server)}

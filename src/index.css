@@ -28,28 +28,45 @@
     --font-secondary: "Source Sans Pro", system-ui, sans-serif;
     --font-mono: "JetBrains Mono", monospace;
   }
+
   .dark {
-    --background: 0 0% 3.9%;
+    /* Material dark theme background - softer than pure black */
+    --background: 0 0% 13%; /* #212121 - material dark background */
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+
+    /* Card and popover - slightly darker than background */
+    --card: 0 0% 10%; /* #191919 - slightly darker for cards */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
+
+    /* Keep primary color unchanged */
     --primary: 169 49% 48%;
     --primary-foreground: 169 49% 98%;
-    --secondary: 169 30% 14.9%;
+
+    /* Softer secondary and muted colors */
+    --secondary: 169 15% 19%;
     --secondary-foreground: 169 49% 98%;
-    --muted: 169 30% 14.9%;
-    --muted-foreground: 169 20% 63.9%;
-    --accent: 169 30% 14.9%;
+    --muted: 169 15% 18%;
+    --muted-foreground: 169 20% 70%;
+
+    /* Accent color - similar to secondary but can be distinct */
+    --accent: 169 15% 20%;
     --accent-foreground: 169 49% 98%;
-    --destructive: 0 62.8% 30.6%;
+
+    /* Softer destructive color */
+    --destructive: 0 62.8% 35%;
     --destructive-foreground: 0 0% 98%;
-    --border: 169 20% 14.9%;
-    --input: 169 20% 14.9%;
+
+    /* Border and input - slightly lighter than background */
+    --border: 169 10% 22%;
+    --input: 169 10% 25%;
+
+    /* Keep ring color unchanged */
     --ring: 169 49% 48%;
   }
 }
+
 @layer base {
   * {
     @apply border-border;

@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getServerIp } from "../utils";
 import { Settings } from "../types";
-import { app } from "electron";
+import { app, nativeTheme } from "electron";
 
 export class SettingsManager {
   public settingsPath: string;
@@ -13,6 +13,9 @@ export class SettingsManager {
       isDiscoverable: true,
       serverIp: getServerIp(),
       serverPort: Number(process.env.SERVER_PORT) || 5000,
+      launchOnStartup: false,
+      darkMode: nativeTheme.shouldUseDarkColors,
+      errorLogging: false,
     };
   }
 
@@ -44,6 +47,12 @@ export class SettingsManager {
     return isDiscoverable;
   }
 
+  async setLaunchOnStartup(launchOnStartup: boolean) {
+    this.settings.launchOnStartup = launchOnStartup;
+    await this.save();
+    return launchOnStartup;
+  }
+
   async updateServerIp() {
     this.settings.serverIp = getServerIp();
     this.settings.serverPort = Number(process.env.SERVER_PORT) || 5000;
@@ -55,7 +64,20 @@ export class SettingsManager {
     return this.settings.isDiscoverable;
   }
 
+  getLaunchOnStartup() {
+    return this.settings.launchOnStartup;
+  }
+
+  getDarkMode() {
+    return this.settings.darkMode;
+  }
+
   getSettings() {
     return this.settings;
+  }
+
+  async updateSettings(settings: Settings) {
+    this.settings = settings;
+    await this.save();
   }
 }
