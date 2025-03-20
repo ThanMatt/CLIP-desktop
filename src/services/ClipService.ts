@@ -1,6 +1,5 @@
 import { BrowserWindow, clipboard, Notification, shell } from "electron";
 import { Response } from "express";
-import notifier from "node-notifier";
 import { generateUrlScheme, isRedditUrl, isYoutubeUrl } from "../utils";
 import path from "node:path";
 import { exec } from "node:child_process";

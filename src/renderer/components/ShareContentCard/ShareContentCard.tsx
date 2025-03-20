@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  ArrowUpFromLine,
   CheckCircleIcon,
   ExternalLink,
   FileImage,
@@ -8,7 +7,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -98,12 +96,9 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     <Card>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold font-sans">
-            CLIP Client
-          </CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg font-bold font-sans">
             Share content between your devices seamlessly
-          </CardDescription>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs

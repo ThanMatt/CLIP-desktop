@@ -128,7 +128,7 @@ const ServerSelectionCard = ({
               </Label>
             </CardDescription>
             <CardDescription>
-              Connect to CLIP servers on your network
+              Share content to CLIP servers on your network
             </CardDescription>
           </div>
           <div className="flex gap-4">
