@@ -23,6 +23,7 @@ import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { IpcResponse, Server } from "../../../types";
+import { UploadTab } from "../UploadTab";
 
 const schema = zod.object({
   content: zod.string().refine((value) => value.trim().length > 0, {
@@ -71,13 +72,10 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
           server: targetServer,
         });
       } else {
-        response = await window.api.respondContentToDevice({
-          content: values.content,
-        });
+        response = await window.api.respondContentToDevice(values.content);
       }
 
       if (!response.success) {
-        console.log("🚀 ~ onSubmit ~ response:", response);
         setError("root", {
           message: response.message,
         });
@@ -131,10 +129,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
               />
             </TabsContent>
             <TabsContent value="image">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <ArrowUpFromLine className="mx-auto h-12 w-12 text-gray-400 mb-4" />{" "}
-                <Subtle>Drag and drop files here, or click to select</Subtle>
-              </div>
+              <UploadTab />
             </TabsContent>
           </Tabs>
           {success && (

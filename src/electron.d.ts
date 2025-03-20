@@ -15,9 +15,7 @@ interface ElectronAPI {
     isDiscoverable: boolean;
   }) => Promise<IpcResponse<boolean>>;
   copyToClipboard: (text: string) => IpcResponse<void>;
-  respondContentToDevice: (
-    payload: RespondContentToDevicePayload
-  ) => Promise<IpcResponse<void>>;
+  respondContentToDevice: (content: string) => Promise<IpcResponse<void>>;
   sendContentToServer: (
     payload: SendContentToServerPayload
   ) => Promise<IpcResponse<void>>;
