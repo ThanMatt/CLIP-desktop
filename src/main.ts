@@ -11,7 +11,12 @@ import { ClipDiscoveryService } from "./services/ClipDiscoveryService";
 import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
-import { Server, Settings } from "./types";
+import {
+  IpcResponse,
+  SendContentToServerPayload,
+  Server,
+  Settings,
+} from "./types";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -126,12 +131,6 @@ function setupExpressRoutes() {
     });
   });
 
-  // :: Get servers
-  expressApp.get("/api/servers", (req, res) => {
-    const servers = discoveryService.getActiveServers();
-    return res.json({ servers });
-  });
-
   // :: Receive text FROM phone devices or clip servers
   expressApp.post("/api/text", (req, res) => {
     const { content } = req.body;
@@ -199,73 +198,95 @@ function setupExpressRoutes() {
       return res.status(400).json({ success: false });
     }
   });
-
-  // :: Settings routes
-  expressApp.patch("/api/settings", async (req, res) => {
-    const { isDiscoverable } = req.body.settings;
-    const result = await discoveryService.setDiscoverable(isDiscoverable);
-    res.json({ success: true });
-  });
-
-  expressApp.get("/api/settings", (req, res) => {
-    const settings = discoveryService.getSettings();
-    res.json({ ...settings });
-  });
 }
 
 // :: IPC handlers for renderer process communication
 function setupIpcHandlers() {
   // :: Get active servers
-  ipcMain.handle("get-servers", () => {
-    return discoveryService.getActiveServers();
+  ipcMain.handle("get-servers", (): IpcResponse<Server[]> => {
+    const servers = discoveryService.getActiveServers();
+    return {
+      success: true,
+      message: "Success",
+      data: servers,
+    };
   });
 
   // :: Get settings
-  ipcMain.handle("get-settings", () => {
-    return discoveryService.getSettings();
+  ipcMain.handle("get-settings", (): IpcResponse<Settings> => {
+    const settings = discoveryService.getSettings();
+    return {
+      success: true,
+      message: "Success",
+      data: settings,
+    };
   });
 
   // :: Update settings
-  ipcMain.handle("update-settings", async (event, settings: Settings) => {
-    const { isDiscoverable } = settings;
-    return await discoveryService.setDiscoverable(isDiscoverable);
-  });
+  ipcMain.handle(
+    "update-settings",
+    async (event, settings: Settings): Promise<IpcResponse<boolean>> => {
+      try {
+        const { isDiscoverable } = settings;
+
+        const response = await discoveryService.setDiscoverable(isDiscoverable);
+
+        return {
+          success: true,
+          message: "Success",
+          data: response,
+        };
+      } catch (error) {
+        throw error;
+      }
+    }
+  );
 
   // :: Copy text to clipboard
-  ipcMain.handle("copy-to-clipboard", (event, text) => {
+  ipcMain.handle("copy-to-clipboard", (event, text): IpcResponse<void> => {
     clipboard.writeText(text);
-    return true;
+    return {
+      success: true,
+      message: "Success",
+    };
   });
 
   // :: Invoked by the app
-  ipcMain.handle("respond-content-to-device", (_, content: string) => {
-    if (currentSession) {
-      const clipService = new ClipService(mainWindow);
+  ipcMain.handle(
+    "respond-content-to-device",
+    (_, content: string): IpcResponse<void> => {
+      try {
+        if (currentSession) {
+          const clipService = new ClipService(mainWindow);
 
-      clipService.respondContentToDevice(
-        content,
-        currentSession,
-        pollingRequest
-      );
-      currentSession = null;
-      return true;
-    } else {
-      throw new Error("No current session found");
+          clipService.respondContentToDevice(
+            content,
+            currentSession,
+            pollingRequest
+          );
+          currentSession = null;
+          return {
+            message: "Success",
+            success: true,
+          };
+        } else {
+          return {
+            success: false,
+            message: "No current session found",
+          };
+        }
+      } catch (error) {
+        throw error;
+      }
     }
-  });
+  );
   // :: Send content to other CLIP server
   ipcMain.handle(
     "send-content-to-server",
     async (
       _,
-      {
-        server,
-        content,
-      }: {
-        server: Server;
-        content: string;
-      }
-    ) => {
+      { server, content }: SendContentToServerPayload
+    ): Promise<IpcResponse<void>> => {
       try {
         const deviceName = os.hostname();
         const serverUrl = `http://${server.ip}:${server.port}`;
@@ -283,14 +304,21 @@ function setupIpcHandlers() {
 
         await response.json();
 
-        return true;
+        if (!response.ok) {
+          return {
+            success: false,
+            message:
+              "There was error sending content to another CLIP Server. Please try again",
+          };
+        }
+
+        return {
+          success: true,
+          message: "Success",
+        };
       } catch (error) {
         console.error(error);
-        throw new Error(
-          `There was an error sending an API request to another CLIP server: ${JSON.stringify(
-            error
-          )}`
-        );
+        throw error;
       }
     }
   );

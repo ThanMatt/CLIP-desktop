@@ -44,3 +44,9 @@ export interface SendContentToServerPayload {
 export interface RespondContentToDevicePayload {
   content: string;
 }
+
+export interface IpcResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+}

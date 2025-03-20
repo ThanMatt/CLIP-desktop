@@ -8,12 +8,11 @@ import {
   CardContent,
 } from "../ui/card";
 import { RefreshCcw, Wifi } from "lucide-react";
-import { GetServersResponse, Server, Settings } from "@/types";
+import { Server, Settings } from "../../../types";
 import { Subtle } from "../ui/typography";
 import { ServerButton } from "../ServerButton";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
-import axiosInstance from "@/config/axios";
 import { cn } from "@/lib/utils";
 
 type ServerSelectionCardProps = {
@@ -52,9 +51,7 @@ const ServerSelectionCard = ({
   };
 
   const getServers = async () => {
-    const response = await axiosInstance.get<GetServersResponse>(
-      "/api/servers"
-    );
+    const response = await window.api.getServers();
     return response.data;
   };
 
@@ -63,7 +60,7 @@ const ServerSelectionCard = ({
     const data = await getServers();
 
     setIsScanning(false);
-    setServers(data.servers);
+    setServers(data);
   };
 
   useEffect(() => {
@@ -75,7 +72,7 @@ const ServerSelectionCard = ({
 
         const data = await getServers();
         if (mounted) {
-          setServers(data.servers);
+          setServers(data);
           setErrors(null);
         }
       } catch (err) {

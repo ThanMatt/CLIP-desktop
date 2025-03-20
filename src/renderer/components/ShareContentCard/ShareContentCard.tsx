@@ -21,9 +21,8 @@ import { Subtle } from "../ui/typography";
 import { useEffect, useState } from "react";
 import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { isAxiosError } from "axios";
 import { useForm } from "react-hook-form";
-import { Server } from "../../../types";
+import { IpcResponse, Server } from "../../../types";
 
 const schema = zod.object({
   content: zod.string().refine((value) => value.trim().length > 0, {
@@ -63,26 +62,32 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   const onSubmit = async (values: FormData) => {
     setLoading(true);
     setSuccess(false);
+    let response: IpcResponse<any>;
 
     try {
       if (targetServer) {
-        await window.api.sendContentToServer({
+        response = await window.api.sendContentToServer({
           content: values.content,
           server: targetServer,
         });
       } else {
-        await window.api.respondContentToDevice({ content: values.content });
+        response = await window.api.respondContentToDevice({
+          content: values.content,
+        });
       }
-      setSuccess(true);
+
+      if (!response.success) {
+        console.log("🚀 ~ onSubmit ~ response:", response);
+        setError("root", {
+          message: response.message,
+        });
+        setSuccess(false);
+      } else {
+        setSuccess(true);
+      }
       setLoading(false);
     } catch (error) {
-      console.error(error.message);
-      let message = error.message;
-      if (isAxiosError(error)) {
-        message = error?.response
-          ? error.response.data.message
-          : "There was an error";
-      }
+      const message = "There was an error. Please try again.";
 
       setError("root", {
         message,

@@ -5,19 +5,22 @@ import {
   SendContentToServerPayload,
   RespondContentToDevicePayload,
   Server,
+  IpcResponse,
 } from "./types";
 
 interface ElectronAPI {
-  getServers: () => Promise<Server[]>;
-  getSettings: () => Promise<Settings>;
-  updateSettings: (settings: { isDiscoverable: boolean }) => Promise<boolean>;
-  copyToClipboard: (text: string) => Promise<boolean>;
+  getServers: () => Promise<IpcResponse<Server[]>>;
+  getSettings: () => Promise<IpcResponse<Settings>>;
+  updateSettings: (settings: {
+    isDiscoverable: boolean;
+  }) => Promise<IpcResponse<boolean>>;
+  copyToClipboard: (text: string) => IpcResponse<void>;
   respondContentToDevice: (
     payload: RespondContentToDevicePayload
-  ) => Promise<boolean>;
+  ) => Promise<IpcResponse<void>>;
   sendContentToServer: (
     payload: SendContentToServerPayload
-  ) => Promise<boolean>;
+  ) => Promise<IpcResponse<void>>;
   onTextReceived: (callback: Callback<TextPayload>) => void;
   onContentReceived: (callback: (data: ContentReceivedData) => void) => void;
   onImageReceived: (callback: (data: ImageReceivedData) => void) => void;

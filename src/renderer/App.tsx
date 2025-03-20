@@ -11,7 +11,7 @@ function App() {
     const getSettings = async () => {
       const response = await window.api.getSettings();
 
-      setSettings(response);
+      setSettings(response.data);
     };
 
     getSettings();
