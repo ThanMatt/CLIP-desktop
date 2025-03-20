@@ -2,12 +2,13 @@ import fs from "fs/promises";
 import path from "path";
 import { getServerIp } from "../utils";
 import { Settings } from "../types";
+import { app } from "electron";
 
 export class SettingsManager {
   public settingsPath: string;
   public settings: Settings;
   constructor() {
-    this.settingsPath = path.join(process.cwd(), "settings.json");
+    this.settingsPath = path.join(app.getPath("userData"), "settings.json");
     this.settings = {
       isDiscoverable: true,
       serverIp: getServerIp(),

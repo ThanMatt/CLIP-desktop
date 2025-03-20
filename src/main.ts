@@ -74,6 +74,19 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
+
+  mainWindow.on("close", (event) => {
+    // If the app is really quitting, let it close
+    if (app.isQuitting) return;
+
+    // Otherwise, prevent default close behavior
+    event.preventDefault();
+
+    // Hide the window instead
+    mainWindow.hide();
+
+    return false;
+  });
 };
 
 function createTray() {
@@ -98,7 +111,11 @@ function createTray() {
   tray.setToolTip("CLIP");
   tray.setContextMenu(contextMenu);
   tray.on("click", () => {
-    mainWindow.show();
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
+    } else {
+      mainWindow.show();
+    }
   });
 }
 
