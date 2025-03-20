@@ -1,8 +1,8 @@
 {
   "name": "clip-desktop",
-  "productName": "clip-desktop",
-  "version": "0.1.0-alpha.5",
-  "description": "My Electron application description",
+  "productName": "CLIP Desktop",
+  "version": "0.1.0-alpha.6",
+  "description": "CLIP Desktop lets you transfer texts and links from a Windows/Linux PC to an iPhone's clipboard, similar to Apple's AirDrop.",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -32,7 +32,6 @@
     "@types/express": "^4.17.21",
     "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.11",
-    "@types/node-notifier": "^8.0.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
@@ -60,7 +59,6 @@
     "lucide-react": "^0.474.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "node-notifier": "^10.0.1",
     "open": "~8.4.2",
     "os": "^0.1.2",
     "react": "^19.0.0",

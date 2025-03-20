@@ -1,4 +1,4 @@
-import { BrowserWindow, clipboard, shell } from "electron";
+import { BrowserWindow, clipboard, Notification, shell } from "electron";
 import { Response } from "express";
 import notifier from "node-notifier";
 import { generateUrlScheme, isRedditUrl, isYoutubeUrl } from "../utils";
@@ -19,10 +19,10 @@ export class ClipService {
     clipboard.writeText(content);
 
     // :: Send notification
-    notifier.notify({
+    new Notification({
       title: `New content from ${deviceName}`,
-      message: `Content: ${content}`,
-    });
+      body: `Content: ${content}`,
+    }).show();
 
     // :: Notify renderer process
     if (this.mainWindow) {
