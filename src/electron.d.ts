@@ -28,6 +28,11 @@ declare global {
   interface Window {
     api: ElectronAPI;
   }
+  namespace Electron {
+    interface App {
+      isQuitting: boolean;
+    }
+  }
 }
 
 export {};

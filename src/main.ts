@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, ipcMain, shell } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain, Menu, Tray } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 import express, { Response } from "express";
@@ -9,12 +9,7 @@ import fs from "fs";
 import os from "os";
 import { ClipDiscoveryService } from "./services/ClipDiscoveryService";
 import { SettingsManager } from "./services/SettingsManagerService";
-import {
-  generateUrlScheme,
-  getServerIp,
-  isRedditUrl,
-  isYoutubeUrl,
-} from "./utils";
+import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
 import { Server, Settings } from "./types";
 
@@ -56,6 +51,7 @@ let currentSession: NodeJS.Timeout = null;
 const TIMEOUT = 30000;
 
 let mainWindow: BrowserWindow;
+let tray;
 
 const discoveryService = new ClipDiscoveryService(port);
 const settingsManager = new SettingsManager();
@@ -80,6 +76,32 @@ const createWindow = () => {
   }
 };
 
+function createTray() {
+  tray = new Tray(path.join(__dirname, "clip_icon.png"));
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Open",
+      click: function () {
+        mainWindow.show();
+      },
+    },
+    {
+      label: "Quit",
+      click: function () {
+        app.isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setToolTip("CLIP");
+  tray.setContextMenu(contextMenu);
+  tray.on("click", () => {
+    mainWindow.show();
+  });
+}
+
 function setupExpressRoutes() {
   expressApp.get("/api", (req, res) => {
     return res.status(200).json({
@@ -99,7 +121,9 @@ function setupExpressRoutes() {
     const deviceName = req.body.device_name ?? "Device";
     const clipService = new ClipService(mainWindow);
 
-    return clipService.receiveTextContent(content, deviceName);
+    clipService.receiveTextContent(content, deviceName);
+
+    return res.status(200).json({ success: true });
   });
 
   // :: Long polling
@@ -287,8 +311,16 @@ app.on("will-quit", () => {
   discoveryService.stop();
 });
 
+app.whenReady().then(() => {
+  createTray();
+});
+
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+app.on("before-quit", () => {
+  app.isQuitting = true;
 });
