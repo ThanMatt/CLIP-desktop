@@ -109,7 +109,7 @@ const createWindow = () => {
       mainWindow.hide();
 
       new Notification({
-        title: "CLIP Desktop will be continue running in the background",
+        title: "CLIP Desktop will continue running in the background",
       }).show();
 
       return false;
