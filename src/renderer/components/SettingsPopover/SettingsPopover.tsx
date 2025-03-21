@@ -1,9 +1,9 @@
 import { SettingsIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Lead, Small } from "../ui/typography";
-import { Switch } from "../ui/switch";
+import { Lead } from "../ui/typography";
 import { Settings } from "../../../types";
+import { SettingItem } from "../SettingItem";
 
 type SettingsPopoverProps = {
   settings: Settings;
@@ -28,34 +28,44 @@ const SettingsPopover = ({
         <div className="space-y-4">
           <Lead>Settings</Lead>
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-4">
-              <Small>Dark mode</Small>
-              <Switch
-                onCheckedChange={() => {
-                  if (settings) {
-                    onCheckedChange("darkMode", !settings?.darkMode);
-                  }
-                }}
-                checked={!!settings?.darkMode}
-              />
-            </div>
+            <SettingItem
+              label="Dark mode"
+              onCheckedChange={() => {
+                if (settings) {
+                  onCheckedChange("darkMode", !settings?.darkMode);
+                }
+              }}
+              checked={!!settings?.darkMode}
+            />
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-4">
-              <Small>Launch on startup</Small>
-              <Switch
-                onCheckedChange={() => {
-                  if (settings) {
-                    onCheckedChange(
-                      "launchOnStartup",
-                      !settings?.launchOnStartup
-                    );
-                  }
-                }}
-                checked={!!settings?.launchOnStartup}
-              />
-            </div>
+            <SettingItem
+              label="Launch on startup"
+              onCheckedChange={() => {
+                if (settings) {
+                  onCheckedChange(
+                    "launchOnStartup",
+                    !settings?.launchOnStartup
+                  );
+                }
+              }}
+              checked={!!settings?.launchOnStartup}
+            />
+          </div>
+          <div className="space-y-2">
+            <SettingItem
+              label="Minimize on close"
+              onCheckedChange={() => {
+                if (settings) {
+                  onCheckedChange(
+                    "minimizeOnClose",
+                    !settings?.minimizeOnClose
+                  );
+                }
+              }}
+              checked={!!settings?.minimizeOnClose}
+            />
           </div>
         </div>
       </PopoverContent>

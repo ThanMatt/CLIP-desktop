@@ -22,6 +22,7 @@ export interface Settings {
   launchOnStartup: boolean;
   darkMode: boolean;
   errorLogging: boolean;
+  minimizeOnClose: boolean;
 }
 
 export interface Announcement {
