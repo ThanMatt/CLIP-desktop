@@ -16,6 +16,7 @@ export class SettingsManager {
       launchOnStartup: false,
       darkMode: nativeTheme.shouldUseDarkColors,
       errorLogging: false,
+      minimizeOnClose: false,
     };
   }
 
@@ -70,6 +71,10 @@ export class SettingsManager {
 
   getDarkMode() {
     return this.settings.darkMode;
+  }
+
+  getMinimizeOnClose() {
+    return this.settings.minimizeOnClose;
   }
 
   getSettings() {

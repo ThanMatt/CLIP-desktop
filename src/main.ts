@@ -99,13 +99,22 @@ const createWindow = () => {
     // If the app is really quitting, let it close
     if (app.isQuitting) return;
 
-    // Otherwise, prevent default close behavior
-    event.preventDefault();
+    const minimizeOnClose = settingsManager.getMinimizeOnClose();
 
-    // Hide the window instead
-    mainWindow.hide();
+    if (minimizeOnClose) {
+      // Otherwise, prevent default close behavior
+      event.preventDefault();
 
-    return false;
+      // Hide the window instead
+      mainWindow.hide();
+
+      new Notification({
+        title: "CLIP Desktop will be continue running in the background",
+      }).show();
+
+      return false;
+    }
+    return true;
   });
 };
 
