@@ -82,10 +82,14 @@ const createWindow = () => {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      devTools: Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL),
     },
     icon: "../assets/icons/icon.png",
   });
 
+  if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    Menu.setApplicationMenu(null);
+  }
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
