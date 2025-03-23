@@ -211,7 +211,7 @@ function setupExpressRoutes() {
       const clipService = new ClipService(mainWindow);
 
       try {
-        await clipService.processImageContent(
+        await clipService.processFileContent(
           req.file,
           deviceName,
           app.getPath("userData")

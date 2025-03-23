@@ -71,7 +71,7 @@ export class ClipService {
     });
   }
 
-  processImageContent(
+  processFileContent(
     file: Express.Multer.File,
     deviceName: string = "Device",
     pathDirectory: string
@@ -80,65 +80,33 @@ export class ClipService {
       `File from ${deviceName} has been uploaded successfully: ${file}`
     );
 
-    const imagePath = path.join(pathDirectory, "uploads", file.originalname);
+    const filePath = path.join(pathDirectory, "uploads", file.originalname);
+    const fileType = file.mimetype;
 
-    console.log("Image path: ", imagePath);
-    // :: Copy image to clipboard based on platform
+    console.log("File path: ", filePath);
 
     return new Promise((resolve, reject) => {
-      let command;
-      switch (process.platform) {
-        case "win32":
-          // :: Use Electron's clipboard API for images
-          try {
-            const nativeImage =
-              require("electron").nativeImage.createFromPath(imagePath);
-            clipboard.writeImage(nativeImage);
-            if (this.mainWindow) {
-              this.mainWindow.webContents.send("image-received", {
-                path: imagePath,
-                deviceName,
-              });
-            }
-          } catch (error) {
-            reject(
-              new Error(
-                `There was an error writing image to clipboard: ${JSON.stringify(
-                  error
-                )}`
-              )
-            );
-          }
-        case "darwin":
-          command = `osascript -e 'tell application "Finder" to set the clipboard to ( POSIX file "${imagePath}" )'`;
-          break;
-        case "linux":
-          command = `xclip -selection clipboard -t image/png -i ${imagePath}`;
-          break;
-        default:
-          reject(new Error("Unsupported OS"));
-      }
-
-      exec(command, (error) => {
-        if (error) {
-          reject(
-            new Error(
-              `There was an error running the clipboard command: ${JSON.stringify(
-                error
-              )}`
-            )
-          );
+      try {
+        // :: Use Electron's clipboard API for images
+        if (fileType.startsWith("image/")) {
+          const nativeImage =
+            require("electron").nativeImage.createFromPath(filePath);
+          clipboard.writeImage(nativeImage);
         }
-
-        // Notify renderer process
         if (this.mainWindow) {
-          this.mainWindow.webContents.send("image-received", {
-            path: imagePath,
+          this.mainWindow.webContents.send("file-received", {
+            path: filePath,
             deviceName,
           });
         }
-      });
-      resolve(true);
+        resolve(true);
+      } catch (error) {
+        reject(
+          new Error(
+            `There was an processing your file: ${JSON.stringify(error)}`
+          )
+        );
+      }
     });
   }
 }
