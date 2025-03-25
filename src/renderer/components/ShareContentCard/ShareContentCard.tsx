@@ -15,20 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { Subtle } from "../ui/typography";
 import { useEffect, useState } from "react";
-import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { IpcResponse, Server } from "../../../types";
+import { FormProvider, useForm } from "react-hook-form";
+import { FilePayload, IpcResponse, Server } from "../../../types";
 import { UploadTab } from "../UploadTab";
-
-const schema = zod.object({
-  content: zod.string().refine((value) => value.trim().length > 0, {
-    message: "This field is required",
-  }),
-});
-type FormData = zod.infer<typeof schema>;
+import { schema, ShareContentFormData } from "./schema";
+import { readFileAsArrayBuffer } from "@/lib/utils";
 
 type ShareContentCardProps = {
   targetServer: Server | null;
@@ -37,7 +30,11 @@ type ShareContentCardProps = {
 const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [, setActiveTab] = useState("text");
+  const [activeTab, setActiveTab] = useState("text");
+
+  const methods = useForm<ShareContentFormData>({
+    resolver: zodResolver(schema),
+  });
 
   const {
     register,
@@ -46,22 +43,30 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     setError,
     reset,
     watch,
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+    clearErrors,
+  } = methods;
 
   const content = watch("content");
+  const files = watch("files") || [];
 
   useEffect(() => {
+    console.log("🚀 ~ useEffect ~ isSubmitSuccessful:", isSubmitSuccessful);
     if (isSubmitSuccessful) {
       reset();
     }
   }, [isSubmitSuccessful, reset]);
 
-  const onSubmit = async (values: FormData) => {
+  useEffect(() => {
+    reset();
+    clearErrors();
+    setSuccess(false);
+  }, [activeTab]);
+
+  const onSubmit = async (values: ShareContentFormData) => {
     setLoading(true);
     setSuccess(false);
     let response: IpcResponse<any>;
+    console.log("🚀 ~ onSubmit ~ values:", values);
 
     try {
       if (targetServer) {
@@ -70,7 +75,25 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
           server: targetServer,
         });
       } else {
-        response = await window.api.respondContentToDevice(values.content);
+        if (values.files?.length > 0) {
+          const filePromises = values.files.map(async (file) => {
+            const fileBuffer = await readFileAsArrayBuffer(file);
+            return {
+              name: file.name,
+              path: file.path,
+              type: file.type,
+              size: file.size,
+              data: Array.from(new Uint8Array(fileBuffer)),
+            };
+          });
+          const payload: FilePayload[] = await Promise.all(filePromises);
+          console.log("🚀 ~ onSubmit ~ payload:", payload);
+          response = await window.api.respondFileToDevice({
+            fileData: payload,
+          });
+        } else {
+          response = await window.api.respondContentToDevice(values.content);
+        }
       }
 
       if (!response.success) {
@@ -83,6 +106,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
       }
       setLoading(false);
     } catch (error) {
+      console.log("🚀 ~ onSubmit ~ error:", error);
       const message = "There was an error. Please try again.";
 
       setError("root", {
@@ -92,68 +116,71 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     }
   };
 
+  const submitButtonDisabled = loading || (!content && !Boolean(files.length));
   return (
     <Card>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardHeader>
-          <CardTitle className="text-lg font-bold font-sans">
-            Share content between your devices seamlessly
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs
-            defaultValue="text"
-            className="w-full"
-            onValueChange={setActiveTab}
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="text" className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
-                Text/Link
-              </TabsTrigger>
-              <TabsTrigger value="image" className="flex items-center gap-2">
-                <FileImage className="h-4 w-4" />
-                Files
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="text">
-              <Textarea
-                placeholder="Enter text or paste a link to share..."
-                className="min-h-[120px] mb-4"
-                {...register("content")}
-              />
-            </TabsContent>
-            <TabsContent value="image">
-              <UploadTab />
-            </TabsContent>
-          </Tabs>
-          {success && (
-            <Alert className="mb-4" variant="success">
-              <CheckCircleIcon className="h-4 w-4" />
-              <AlertTitle>Success!</AlertTitle>
-              <AlertDescription>
-                Content has been sent successfully
-              </AlertDescription>
-            </Alert>
-          )}
-          {errors.root && (
-            <Alert className="mb-4" variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{errors.root?.message}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button
-            className="w-full"
-            disabled={!!errors.content || loading || !content}
-            type="submit"
-          >
-            Send Content {targetServer ? `to ${targetServer.deviceName}` : ""}
-          </Button>
-        </CardFooter>
-      </form>
+      <FormProvider {...methods}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardHeader>
+            <CardTitle className="text-lg font-bold font-sans">
+              Share content between your devices seamlessly
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs
+              defaultValue="text"
+              className="w-full"
+              onValueChange={setActiveTab}
+            >
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="text" className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Text/Link
+                </TabsTrigger>
+                <TabsTrigger value="image" className="flex items-center gap-2">
+                  <FileImage className="h-4 w-4" />
+                  Files
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="text">
+                <Textarea
+                  placeholder="Enter text or paste a link to share..."
+                  className="min-h-[120px] mb-4"
+                  {...register("content")}
+                />
+              </TabsContent>
+              <TabsContent value="image">
+                <UploadTab />
+              </TabsContent>
+            </Tabs>
+            {success && (
+              <Alert className="mb-4 mt-4" variant="success">
+                <CheckCircleIcon className="h-4 w-4" />
+                <AlertTitle>Success!</AlertTitle>
+                <AlertDescription>
+                  Content has been sent successfully
+                </AlertDescription>
+              </Alert>
+            )}
+            {errors.root && (
+              <Alert className="mb-4 mt-4" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{errors.root?.message}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button
+              className="w-full"
+              disabled={submitButtonDisabled}
+              type="submit"
+            >
+              Send Content {targetServer ? `to ${targetServer.deviceName}` : ""}
+            </Button>
+          </CardFooter>
+        </form>
+      </FormProvider>
     </Card>
   );
 };

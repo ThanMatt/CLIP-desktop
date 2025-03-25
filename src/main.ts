@@ -21,6 +21,7 @@ import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
 import {
+  FilePayload,
   IpcResponse,
   SendContentToServerPayload,
   Server,
@@ -211,7 +212,7 @@ function setupExpressRoutes() {
       const clipService = new ClipService(mainWindow);
 
       try {
-        await clipService.processImageContent(
+        await clipService.processFileContent(
           req.file,
           deviceName,
           app.getPath("userData")
@@ -307,6 +308,39 @@ function setupIpcHandlers() {
             currentSession,
             pollingRequest
           );
+          currentSession = null;
+          return {
+            message: "Success",
+            success: true,
+          };
+        } else {
+          return {
+            success: false,
+            message: "No current session found",
+          };
+        }
+      } catch (error) {
+        throw error;
+      }
+    }
+  );
+  ipcMain.handle(
+    "respond-file-to-device",
+    async (_, fileData: FilePayload[]): Promise<IpcResponse<void>> => {
+      console.log("🚀 ~ fileData:", fileData);
+      try {
+        if (currentSession && fileData.length > 0) {
+          const clipService = new ClipService(mainWindow);
+          console.log("FILES: ", fileData);
+          const file = fileData[0];
+
+          await clipService.respondFileToDevice(
+            file,
+            currentSession,
+            pollingRequest,
+            app.getPath("userData")
+          );
+
           currentSession = null;
           return {
             message: "Success",
