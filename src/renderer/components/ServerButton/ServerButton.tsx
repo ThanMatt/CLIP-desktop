@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { ServerIcon } from "lucide-react";
 import { Button } from "../ui/button";
-import { Server } from "@/types";
+import { Server } from "../../../types";
 
 type ServerButtonProps = {
   server: Server;
