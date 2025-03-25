@@ -21,6 +21,7 @@ import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
 import {
+  FilePayload,
   IpcResponse,
   SendContentToServerPayload,
   Server,
@@ -325,17 +326,19 @@ function setupIpcHandlers() {
   );
   ipcMain.handle(
     "respond-file-to-device",
-    async (_, files: File[]): Promise<IpcResponse<void>> => {
+    async (_, fileData: FilePayload[]): Promise<IpcResponse<void>> => {
+      console.log("🚀 ~ fileData:", fileData);
       try {
-        if (currentSession && files.length > 0) {
+        if (currentSession && fileData.length > 0) {
           const clipService = new ClipService(mainWindow);
-          console.log("FILES: ", files);
-          const file = files[0];
+          console.log("FILES: ", fileData);
+          const file = fileData[0];
 
           await clipService.respondFileToDevice(
             file,
             currentSession,
-            pollingRequest
+            pollingRequest,
+            app.getPath("userData")
           );
 
           currentSession = null;

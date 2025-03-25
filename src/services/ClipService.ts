@@ -3,6 +3,7 @@ import { Response } from "express";
 import { generateUrlScheme, isRedditUrl, isYoutubeUrl } from "../utils";
 import path from "node:path";
 import fs from "fs";
+import { FilePayload } from "src/types";
 
 export class ClipService {
   public mainWindow: BrowserWindow;
@@ -72,16 +73,18 @@ export class ClipService {
   }
 
   async respondFileToDevice(
-    file: File,
+    file: FilePayload,
     currentSession: NodeJS.Timeout,
-    pollingRequest: { res: Response }
+    pollingRequest: { res: Response },
+    pathDirectory: string
   ) {
     console.log("🚀 ~ ClipService ~ file:", file);
     if (file) {
       const fileType = file.type;
 
-      const buffer = await file.arrayBuffer();
-      const data = Buffer.from(buffer);
+      const savePath = path.join(pathDirectory, "shareables", file.name);
+
+      const data = Buffer.from(file.data);
       clearTimeout(currentSession);
       pollingRequest.res.setHeader("Content-Type", fileType);
       pollingRequest.res.send(data);

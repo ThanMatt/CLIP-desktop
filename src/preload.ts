@@ -4,7 +4,9 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
   Callback,
+  FilePayload,
   RespondContentToDevicePayload,
+  RespondFileToDevicePayload,
   SendContentToServerPayload,
   Settings,
   TextPayload,
@@ -39,7 +41,8 @@ contextBridge.exposeInMainWorld("api", {
   sendContentToServer: (payload: SendContentToServerPayload) => {
     return ipcRenderer.invoke("send-content-to-server", payload);
   },
-  respondFileToDevice: (files: File[]) => {
-    return ipcRenderer.invoke("respond-file-to-device", files);
+  respondFileToDevice: (payload: RespondFileToDevicePayload) => {
+    console.log("🚀 ~ payload:", payload);
+    return ipcRenderer.invoke("respond-file-to-device", payload.fileData);
   },
 });

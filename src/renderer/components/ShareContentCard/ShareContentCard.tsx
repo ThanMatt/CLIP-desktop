@@ -18,9 +18,10 @@ import { Textarea } from "../ui/textarea";
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
-import { IpcResponse, Server } from "../../../types";
+import { FilePayload, IpcResponse, Server } from "../../../types";
 import { UploadTab } from "../UploadTab";
 import { schema, ShareContentFormData } from "./schema";
+import { readFileAsArrayBuffer } from "@/lib/utils";
 
 type ShareContentCardProps = {
   targetServer: Server | null;
@@ -58,6 +59,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   useEffect(() => {
     reset();
     clearErrors();
+    setSuccess(false);
   }, [activeTab]);
 
   const onSubmit = async (values: ShareContentFormData) => {
@@ -73,8 +75,22 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
           server: targetServer,
         });
       } else {
-        if (values.files.length > 0) {
-          response = await window.api.respondFileToDevice(values.files);
+        if (values.files?.length > 0) {
+          const filePromises = values.files.map(async (file) => {
+            const fileBuffer = await readFileAsArrayBuffer(file);
+            return {
+              name: file.name,
+              path: file.path,
+              type: file.type,
+              size: file.size,
+              data: Array.from(new Uint8Array(fileBuffer)),
+            };
+          });
+          const payload: FilePayload[] = await Promise.all(filePromises);
+          console.log("🚀 ~ onSubmit ~ payload:", payload);
+          response = await window.api.respondFileToDevice({
+            fileData: payload,
+          });
         } else {
           response = await window.api.respondContentToDevice(values.content);
         }
@@ -138,7 +154,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
               </TabsContent>
             </Tabs>
             {success && (
-              <Alert className="mb-4" variant="success">
+              <Alert className="mb-4 mt-4" variant="success">
                 <CheckCircleIcon className="h-4 w-4" />
                 <AlertTitle>Success!</AlertTitle>
                 <AlertDescription>
@@ -147,7 +163,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
               </Alert>
             )}
             {errors.root && (
-              <Alert className="mb-4" variant="destructive">
+              <Alert className="mb-4 mt-4" variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{errors.root?.message}</AlertDescription>

@@ -54,3 +54,15 @@ export interface IpcResponse<T> {
   message: string;
   data?: T;
 }
+
+export interface FilePayload {
+  name: string;
+  path: string;
+  type: string;
+  size: number;
+  data: number[];
+}
+
+export interface RespondFileToDevicePayload {
+  fileData: FilePayload[];
+}

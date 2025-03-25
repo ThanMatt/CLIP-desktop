@@ -1,11 +1,11 @@
 import { ArrowUpFromLine } from "lucide-react";
 import { Small, Subtle } from "../ui/typography";
 import { useFormContext } from "react-hook-form";
-import { ShareContentFormData } from "../ShareContentCard/ShareContentCard";
 import { useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/lib/utils";
 import { FileItem } from "../FileItem";
+import { ShareContentFormData } from "../ShareContentCard/schema";
 
 const UploadTab = () => {
   const {

@@ -6,6 +6,7 @@ import {
   RespondContentToDevicePayload,
   Server,
   IpcResponse,
+  RespondFileToDevicePayload,
 } from "./types";
 
 interface ElectronAPI {
@@ -19,7 +20,9 @@ interface ElectronAPI {
   sendContentToServer: (
     payload: SendContentToServerPayload
   ) => Promise<IpcResponse<void>>;
-  respondFileToDevice: (files: File[]) => Promise<IpcResponse<void>>;
+  respondFileToDevice: (
+    payload: RespondFileToDevicePayload
+  ) => Promise<IpcResponse<void>>;
   onTextReceived: (callback: Callback<TextPayload>) => void;
   onContentReceived: (callback: (data: ContentReceivedData) => void) => void;
   onImageReceived: (callback: (data: ImageReceivedData) => void) => void;
