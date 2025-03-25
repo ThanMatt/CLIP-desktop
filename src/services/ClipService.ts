@@ -2,7 +2,7 @@ import { BrowserWindow, clipboard, Notification, shell } from "electron";
 import { Response } from "express";
 import { generateUrlScheme, isRedditUrl, isYoutubeUrl } from "../utils";
 import path from "node:path";
-import { exec } from "node:child_process";
+import fs from "fs";
 
 export class ClipService {
   public mainWindow: BrowserWindow;
@@ -69,6 +69,23 @@ export class ClipService {
       content,
       urlScheme,
     });
+  }
+
+  async respondFileToDevice(
+    file: File,
+    currentSession: NodeJS.Timeout,
+    pollingRequest: { res: Response }
+  ) {
+    console.log("🚀 ~ ClipService ~ file:", file);
+    if (file) {
+      const fileType = file.type;
+
+      const buffer = await file.arrayBuffer();
+      const data = Buffer.from(buffer);
+      clearTimeout(currentSession);
+      pollingRequest.res.setHeader("Content-Type", fileType);
+      pollingRequest.res.send(data);
+    }
   }
 
   processFileContent(

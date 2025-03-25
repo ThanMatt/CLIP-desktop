@@ -49,6 +49,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   const files = watch("files") || [];
 
   useEffect(() => {
+    console.log("🚀 ~ useEffect ~ isSubmitSuccessful:", isSubmitSuccessful);
     if (isSubmitSuccessful) {
       reset();
     }
@@ -63,6 +64,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     setLoading(true);
     setSuccess(false);
     let response: IpcResponse<any>;
+    console.log("🚀 ~ onSubmit ~ values:", values);
 
     try {
       if (targetServer) {
@@ -71,7 +73,11 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
           server: targetServer,
         });
       } else {
-        response = await window.api.respondContentToDevice(values.content);
+        if (values.files.length > 0) {
+          response = await window.api.respondFileToDevice(values.files);
+        } else {
+          response = await window.api.respondContentToDevice(values.content);
+        }
       }
 
       if (!response.success) {
@@ -84,6 +90,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
       }
       setLoading(false);
     } catch (error) {
+      console.log("🚀 ~ onSubmit ~ error:", error);
       const message = "There was an error. Please try again.";
 
       setError("root", {

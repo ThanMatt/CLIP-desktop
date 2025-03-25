@@ -323,6 +323,37 @@ function setupIpcHandlers() {
       }
     }
   );
+  ipcMain.handle(
+    "respond-file-to-device",
+    async (_, files: File[]): Promise<IpcResponse<void>> => {
+      try {
+        if (currentSession && files.length > 0) {
+          const clipService = new ClipService(mainWindow);
+          console.log("FILES: ", files);
+          const file = files[0];
+
+          await clipService.respondFileToDevice(
+            file,
+            currentSession,
+            pollingRequest
+          );
+
+          currentSession = null;
+          return {
+            message: "Success",
+            success: true,
+          };
+        } else {
+          return {
+            success: false,
+            message: "No current session found",
+          };
+        }
+      } catch (error) {
+        throw error;
+      }
+    }
+  );
   // :: Send content to other CLIP server
   ipcMain.handle(
     "send-content-to-server",
