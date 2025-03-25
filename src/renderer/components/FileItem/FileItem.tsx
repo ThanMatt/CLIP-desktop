@@ -21,7 +21,7 @@ const FileItem = ({ file, index, onRemoveFile }: FileItemProps) => {
         </span>
       </div>
       <Button
-        variant="ghost"
+        variant="destructive"
         size="sm"
         className="h-8 w-8 p-0"
         onClick={onRemoveFile}

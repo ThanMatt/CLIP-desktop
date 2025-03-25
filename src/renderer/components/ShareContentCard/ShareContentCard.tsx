@@ -15,49 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { Subtle } from "../ui/typography";
 import { useEffect, useState } from "react";
-import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { IpcResponse, Server } from "../../../types";
 import { UploadTab } from "../UploadTab";
-
-const schema = zod
-  .object({
-    content: zod.string().optional(),
-    files: zod
-      .array(
-        zod
-          .instanceof(File, {
-            message: "Please upload valid files",
-          })
-          .refine(
-            (file) => {
-              // :: Check if file is an image
-              return file.type.startsWith("image/");
-            },
-            {
-              message: "Only image files are allowed",
-            }
-          )
-      )
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      // :: At least one of content or files must be provided
-      return (
-        (data.content && data.content.trim().length > 0) ||
-        (data.files && data.files.length > 0)
-      );
-    },
-    {
-      message: "You must provide either text content or upload files",
-      path: ["root"], // :: This sets the error at the form level
-    }
-  );
-export type ShareContentFormData = zod.infer<typeof schema>;
+import { schema, ShareContentFormData } from "./schema";
 
 type ShareContentCardProps = {
   targetServer: Server | null;
@@ -66,7 +29,7 @@ type ShareContentCardProps = {
 const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [, setActiveTab] = useState("text");
+  const [activeTab, setActiveTab] = useState("text");
 
   const methods = useForm<ShareContentFormData>({
     resolver: zodResolver(schema),
@@ -79,15 +42,22 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     setError,
     reset,
     watch,
+    clearErrors,
   } = methods;
 
   const content = watch("content");
+  const files = watch("files") || [];
 
   useEffect(() => {
     if (isSubmitSuccessful) {
       reset();
     }
   }, [isSubmitSuccessful, reset]);
+
+  useEffect(() => {
+    reset();
+    clearErrors();
+  }, [activeTab]);
 
   const onSubmit = async (values: ShareContentFormData) => {
     setLoading(true);
@@ -123,6 +93,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     }
   };
 
+  const submitButtonDisabled = loading || (!content && !Boolean(files.length));
   return (
     <Card>
       <FormProvider {...methods}>
@@ -179,7 +150,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
           <CardFooter>
             <Button
               className="w-full"
-              disabled={!!errors.content || loading || !content}
+              disabled={submitButtonDisabled}
               type="submit"
             >
               Send Content {targetServer ? `to ${targetServer.deviceName}` : ""}
