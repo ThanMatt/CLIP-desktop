@@ -49,7 +49,7 @@ const UploadTab = () => {
         {...getRootProps()}
         className={cn(
           "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isDragActive ? "bg-gray-100 border-primary" : "hover:bg-accent"
+          isDragActive ? "bg-accent border-primary" : "hover:bg-accent"
         )}
       >
         <input {...getInputProps()} />
