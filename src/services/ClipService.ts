@@ -82,8 +82,6 @@ export class ClipService {
     if (file) {
       const fileType = file.type;
 
-      const savePath = path.join(pathDirectory, "shareables", file.name);
-
       const data = Buffer.from(file.data);
       clearTimeout(currentSession);
       pollingRequest.res.setHeader("Content-Type", fileType);

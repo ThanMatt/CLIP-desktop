@@ -32,6 +32,7 @@ const UploadTab = () => {
       },
       accept: {
         "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+        "application/pdf": [".pdf"],
       },
     });
   const removeFile = (index: number) => {
@@ -59,14 +60,15 @@ const UploadTab = () => {
             ? "Drop files here..."
             : "Drag and drop files here, or click to select"}
         </Subtle>
-        <Subtle className="mt-1">Accepted formats: JPG, PNG, GIF</Subtle>
+        <Subtle className="mt-1">Accepted formats: JPG, PNG, GIF, PDF</Subtle>
       </div>
       {errors.files && (
         <Small className="text-red-500 mt-1">{errors.files.message}</Small>
       )}
       {fileRejections.length > 0 && (
         <Small className="text-red-500 mt-1">
-          Some files were rejected: Only image files are currently allowed
+          Some files were rejected: Only image and PDF files are currently
+          allowed
         </Small>
       )}
 

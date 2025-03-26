@@ -12,10 +12,13 @@ export const schema = zod
           .refine(
             (file) => {
               // :: Check if file is an image
-              return file.type.startsWith("image/");
+              return (
+                file.type.startsWith("image/") ||
+                file.type === "application/pdf"
+              );
             },
             {
-              message: "Only image files are allowed",
+              message: "Only image and PDF files are allowed",
             }
           )
       )
