@@ -31,7 +31,7 @@ const UploadTab = () => {
         });
       },
       accept: {
-        "image/*": [".jpeg", ".jpg", ".png", ".gif"],
+        "image/*": [".jpeg", ".jpg", ".png", ".gif", ".pdf"],
       },
     });
   const removeFile = (index: number) => {
@@ -49,7 +49,7 @@ const UploadTab = () => {
         {...getRootProps()}
         className={cn(
           "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isDragActive ? "bg-accent border-primary" : "hover:bg-accent"
+          isDragActive ? "bg-accent border-primary" : "hover:bg-accent",
         )}
       >
         <input {...getInputProps()} />
@@ -59,14 +59,15 @@ const UploadTab = () => {
             ? "Drop files here..."
             : "Drag and drop files here, or click to select"}
         </Subtle>
-        <Subtle className="mt-1">Accepted formats: JPG, PNG, GIF</Subtle>
+        <Subtle className="mt-1">Accepted formats: JPG, PNG, GIF, PDF</Subtle>
       </div>
       {errors.files && (
         <Small className="text-red-500 mt-1">{errors.files.message}</Small>
       )}
       {fileRejections.length > 0 && (
         <Small className="text-red-500 mt-1">
-          Some files were rejected: Only image files are currently allowed
+          Some files were rejected: Only image files and PDF are currently
+          allowed
         </Small>
       )}
 
@@ -79,6 +80,7 @@ const UploadTab = () => {
                 file={file}
                 index={index}
                 onRemoveFile={() => removeFile(index)}
+                error={errors.files?.[index]?.message}
               />
             );
           })}

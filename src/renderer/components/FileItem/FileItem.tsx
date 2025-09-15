@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { FileIcon, X } from "lucide-react";
 import { Button } from "../ui/button";
 
@@ -5,13 +6,17 @@ export type FileItemProps = {
   index: number;
   file: File;
   onRemoveFile: () => void;
+  error?: string | null;
 };
 
-const FileItem = ({ file, index, onRemoveFile }: FileItemProps) => {
+const FileItem = ({ file, index, onRemoveFile, error }: FileItemProps) => {
   return (
     <div
       key={index}
-      className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+      className={cn(
+        "flex items-center justify-between p-2 bg-gray-50 rounded-md",
+        error && "bg-destructive/30",
+      )}
     >
       <div className="flex items-center space-x-2">
         <FileIcon className="h-4 w-4 text-gray-500" />

@@ -1,6 +1,11 @@
 import { BrowserWindow, clipboard, Notification, shell } from "electron";
 import { Response } from "express";
-import { generateUrlScheme, isRedditUrl, isYoutubeUrl } from "../utils";
+import {
+  generateUrlScheme,
+  getServerIp,
+  isRedditUrl,
+  isYoutubeUrl,
+} from "../utils";
 import path from "node:path";
 import fs from "fs";
 import { FilePayload } from "src/types";
@@ -12,7 +17,7 @@ export class ClipService {
     this.mainWindow = mainWindow;
   }
 
-  receiveTextContent(content: string, deviceName: string = "Device") {
+  receiveTextContent(content: string, deviceName = "Device") {
     console.log(`Data received from ${deviceName}: ${content}`);
 
     // :: Write to clipboard
@@ -43,7 +48,7 @@ export class ClipService {
   respondContentToDevice(
     content: string,
     currentSession: NodeJS.Timeout,
-    pollingRequest: { res: Response }
+    pollingRequest: { res: Response },
   ) {
     console.log("Payload received");
     console.log("Payload: ", content);
@@ -76,28 +81,46 @@ export class ClipService {
     file: FilePayload,
     currentSession: NodeJS.Timeout,
     pollingRequest: { res: Response },
-    pathDirectory: string
+    pathDirectory: string,
   ) {
     console.log("🚀 ~ ClipService ~ file:", file);
     if (file) {
-      const fileType = file.type;
+      const shareablesDir = path.join(pathDirectory, "shareables");
 
-      const savePath = path.join(pathDirectory, "shareables", file.name);
+      // Ensure shareables directory exists
+      if (!fs.existsSync(shareablesDir)) {
+        fs.mkdirSync(shareablesDir, { recursive: true });
+      }
 
+      const savePath = path.join(shareablesDir, file.name);
       const data = Buffer.from(file.data);
+
+      // Save file to shareables directory
+      fs.writeFileSync(savePath, data);
+
+      // Generate file URL (assuming server runs on the same port)
+      const serverPort = process.env.SERVER_PORT || 5050;
+      const serverIp = getServerIp();
+      const fileUrl = `http://${serverIp}:${serverPort}/api/files/${encodeURIComponent(file.name)}`;
+
       clearTimeout(currentSession);
-      pollingRequest.res.setHeader("Content-Type", fileType);
-      pollingRequest.res.send(data);
+      pollingRequest.res.status(200).json({
+        success: true,
+        fileUrl,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      });
     }
   }
 
   processFileContent(
     file: Express.Multer.File,
-    deviceName: string = "Device",
-    pathDirectory: string
+    deviceName = "Device",
+    pathDirectory: string,
   ): Promise<boolean> {
     console.log(
-      `File from ${deviceName} has been uploaded successfully: ${file}`
+      `File from ${deviceName} has been uploaded successfully: ${file}`,
     );
 
     const filePath = path.join(pathDirectory, "uploads", file.originalname);
@@ -123,8 +146,8 @@ export class ClipService {
       } catch (error) {
         reject(
           new Error(
-            `There was an processing your file: ${JSON.stringify(error)}`
-          )
+            `There was an processing your file: ${JSON.stringify(error)}`,
+          ),
         );
       }
     });
