@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 import { cn } from "@/lib/utils";
 import { FileItem } from "../FileItem";
 import { ShareContentFormData } from "../ShareContentCard/schema";
+import { getDropzoneAcceptConfig, getDisplayFormats } from "../../lib/fileTypes";
 
 const UploadTab = () => {
   const {
@@ -30,9 +31,7 @@ const UploadTab = () => {
           shouldTouch: true,
         });
       },
-      accept: {
-        "image/*": [".jpeg", ".jpg", ".png", ".gif"],
-      },
+      accept: getDropzoneAcceptConfig(),
     });
   const removeFile = (index: number) => {
     const newFiles = [...files];
@@ -49,7 +48,7 @@ const UploadTab = () => {
         {...getRootProps()}
         className={cn(
           "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-          isDragActive ? "bg-accent border-primary" : "hover:bg-accent"
+          isDragActive ? "bg-accent border-primary" : "hover:bg-accent",
         )}
       >
         <input {...getInputProps()} />
@@ -59,14 +58,14 @@ const UploadTab = () => {
             ? "Drop files here..."
             : "Drag and drop files here, or click to select"}
         </Subtle>
-        <Subtle className="mt-1">Accepted formats: JPG, PNG, GIF</Subtle>
+        <Subtle className="mt-1">Accepted formats: {getDisplayFormats()}</Subtle>
       </div>
       {errors.files && (
         <Small className="text-red-500 mt-1">{errors.files.message}</Small>
       )}
       {fileRejections.length > 0 && (
         <Small className="text-red-500 mt-1">
-          Some files were rejected: Only image files are currently allowed
+          Some files were rejected: Only {getDisplayFormats()} files are currently allowed
         </Small>
       )}
 
@@ -79,6 +78,7 @@ const UploadTab = () => {
                 file={file}
                 index={index}
                 onRemoveFile={() => removeFile(index)}
+                error={errors.files?.[index]?.message}
               />
             );
           })}

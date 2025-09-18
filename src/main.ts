@@ -1,3 +1,4 @@
+import "dotenv/config";
 import {
   app,
   BrowserWindow,
@@ -6,6 +7,7 @@ import {
   Menu,
   nativeTheme,
   Notification,
+  shell,
   Tray,
 } from "electron";
 import path from "node:path";
@@ -20,6 +22,7 @@ import { ClipDiscoveryService } from "./services/ClipDiscoveryService";
 import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
+import { UpdateCheckerService } from "./services/UpdateCheckerService";
 import {
   FilePayload,
   IpcResponse,
@@ -39,7 +42,8 @@ if (!gotTheLock) {
 }
 
 const expressApp = express();
-const port = Number(process.env.SERVER_PORT) || 5000;
+
+const port = Number(process.env.SERVER_PORT) || 5050;
 
 // :: Express middleware
 expressApp.use(express.json());
@@ -70,6 +74,7 @@ let tray;
 
 const settingsManager = new SettingsManager();
 const discoveryService = new ClipDiscoveryService(port, settingsManager);
+const updateChecker = new UpdateCheckerService(app.getVersion());
 
 app.setLoginItemSettings({
   openAtLogin: settingsManager.getLaunchOnStartup(),
@@ -96,7 +101,7 @@ const createWindow = () => {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
 
@@ -193,7 +198,7 @@ function setupExpressRoutes() {
       clipService.respondContentToDevice(
         content,
         currentSession,
-        pollingRequest
+        pollingRequest,
       );
       currentSession = null;
       return res.status(200).json({ success: true });
@@ -215,7 +220,7 @@ function setupExpressRoutes() {
         await clipService.processFileContent(
           req.file,
           deviceName,
-          app.getPath("userData")
+          app.getPath("userData"),
         );
       } catch (error) {
         return res.status(500).json({ success: false });
@@ -239,6 +244,22 @@ function setupExpressRoutes() {
     if (!mainWindow.isVisible()) mainWindow.show();
     mainWindow.focus();
     res.status(200).json({ success: true });
+  });
+
+  // :: Serve files from shareables directory
+  expressApp.get("/api/files/:filename", (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(app.getPath("userData"), "shareables", filename);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found" });
+    }
+
+    // Serve the file
+    res.sendFile(filePath);
   });
 }
 
@@ -268,22 +289,18 @@ function setupIpcHandlers() {
   ipcMain.handle(
     "update-settings",
     async (event, settings: Settings): Promise<IpcResponse<boolean>> => {
-      try {
-        await settingsManager.updateSettings(settings);
-        const theme = settings.darkMode ? "dark" : "light";
-        nativeTheme.themeSource = theme;
-        app.setLoginItemSettings({
-          openAtLogin: settings.launchOnStartup,
-        });
+      await settingsManager.updateSettings(settings);
+      const theme = settings.darkMode ? "dark" : "light";
+      nativeTheme.themeSource = theme;
+      app.setLoginItemSettings({
+        openAtLogin: settings.launchOnStartup,
+      });
 
-        return {
-          success: true,
-          message: "Success",
-        };
-      } catch (error) {
-        throw error;
-      }
-    }
+      return {
+        success: true,
+        message: "Success",
+      };
+    },
   );
 
   // :: Copy text to clipboard
@@ -299,70 +316,62 @@ function setupIpcHandlers() {
   ipcMain.handle(
     "respond-content-to-device",
     (_, content: string): IpcResponse<void> => {
-      try {
-        if (currentSession) {
-          const clipService = new ClipService(mainWindow);
+      if (currentSession) {
+        const clipService = new ClipService(mainWindow);
 
-          clipService.respondContentToDevice(
-            content,
-            currentSession,
-            pollingRequest
-          );
-          currentSession = null;
-          return {
-            message: "Success",
-            success: true,
-          };
-        } else {
-          return {
-            success: false,
-            message: "No current session found",
-          };
-        }
-      } catch (error) {
-        throw error;
+        clipService.respondContentToDevice(
+          content,
+          currentSession,
+          pollingRequest,
+        );
+        currentSession = null;
+        return {
+          message: "Success",
+          success: true,
+        };
+      } else {
+        return {
+          success: false,
+          message: "No current session found",
+        };
       }
-    }
+    },
   );
   ipcMain.handle(
     "respond-file-to-device",
     async (_, fileData: FilePayload[]): Promise<IpcResponse<void>> => {
       console.log("🚀 ~ fileData:", fileData);
-      try {
-        if (currentSession && fileData.length > 0) {
-          const clipService = new ClipService(mainWindow);
-          console.log("FILES: ", fileData);
-          const file = fileData[0];
+      if (currentSession && fileData.length > 0) {
+        const clipService = new ClipService(mainWindow);
+        console.log("FILES: ", fileData);
+        const file = fileData[0];
 
-          await clipService.respondFileToDevice(
-            file,
-            currentSession,
-            pollingRequest,
-            app.getPath("userData")
-          );
+        await clipService.respondFileToDevice(
+          file,
+          currentSession,
+          pollingRequest,
+          app.getPath("userData"),
+        );
 
-          currentSession = null;
-          return {
-            message: "Success",
-            success: true,
-          };
-        } else {
-          return {
-            success: false,
-            message: "No current session found",
-          };
-        }
-      } catch (error) {
-        throw error;
+        currentSession = null;
+        return {
+          message: "Success",
+          success: true,
+        };
+      } else {
+        return {
+          success: false,
+          message: "No current session found",
+        };
       }
-    }
+    },
   );
   // :: Send content to other CLIP server
   ipcMain.handle(
     "send-content-to-server",
     async (
       _,
-      { server, content }: SendContentToServerPayload
+      { server, content }: SendContentToServerPayload,
     ): Promise<IpcResponse<void>> => {
       try {
         const deviceName = os.hostname();
@@ -397,8 +406,44 @@ function setupIpcHandlers() {
         console.error(error);
         throw error;
       }
-    }
+    },
   );
+
+  // :: Get app version
+  ipcMain.handle("get-app-version", (): IpcResponse<string> => {
+    return {
+      success: true,
+      message: "Success",
+      data: app.getVersion(),
+    };
+  });
+
+  // :: Open external URL
+  ipcMain.handle("open-external", (_, url: string): IpcResponse<void> => {
+    shell.openExternal(url);
+    return {
+      success: true,
+      message: "Success",
+    };
+  });
+
+  // :: Check for updates
+  ipcMain.handle("check-for-updates", async () => {
+    try {
+      const updateInfo = await updateChecker.checkForUpdates();
+      return {
+        success: true,
+        message: "Success",
+        data: updateInfo,
+      };
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+      return {
+        success: false,
+        message: "Failed to check for updates",
+      };
+    }
+  });
 }
 
 app.on("ready", async () => {
@@ -416,7 +461,7 @@ app.on("ready", async () => {
 });
 
 // :: Handle second instance
-app.on("second-instance", (event, commandLine, workingDirectory) => {
+app.on("second-instance", () => {
   // :: Someone tried to run a second instance, focus our window instead
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();

@@ -50,7 +50,6 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
   const files = watch("files") || [];
 
   useEffect(() => {
-    console.log("🚀 ~ useEffect ~ isSubmitSuccessful:", isSubmitSuccessful);
     if (isSubmitSuccessful) {
       reset();
     }
@@ -62,19 +61,33 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     setSuccess(false);
   }, [activeTab]);
 
+  useEffect(() => {
+    let statusTimeout;
+    if (success || errors.root) {
+      statusTimeout = setTimeout(() => {
+        if (success) setSuccess(false);
+        if (errors.root) clearErrors("root");
+      }, 5000);
+    }
+
+    return () => clearTimeout(statusTimeout);
+  }, [success, errors.root, clearErrors]);
+
   const onSubmit = async (values: ShareContentFormData) => {
     setLoading(true);
     setSuccess(false);
     let response: IpcResponse<any>;
-    console.log("🚀 ~ onSubmit ~ values:", values);
 
     try {
+      // :: For CLIP-to-CLIP server transfer
       if (targetServer) {
         response = await window.api.sendContentToServer({
           content: values.content,
           server: targetServer,
         });
       } else {
+        // :: For mobile devices (e.g. iOS, android)
+        // :: For file transfers
         if (values.files?.length > 0) {
           const filePromises = values.files.map(async (file) => {
             const fileBuffer = await readFileAsArrayBuffer(file);
@@ -87,11 +100,11 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
             };
           });
           const payload: FilePayload[] = await Promise.all(filePromises);
-          console.log("🚀 ~ onSubmit ~ payload:", payload);
           response = await window.api.respondFileToDevice({
             fileData: payload,
           });
         } else {
+          // :: For text-content transfers
           response = await window.api.respondContentToDevice(values.content);
         }
       }
@@ -106,7 +119,6 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
       }
       setLoading(false);
     } catch (error) {
-      console.log("🚀 ~ onSubmit ~ error:", error);
       const message = "There was an error. Please try again.";
 
       setError("root", {
@@ -116,7 +128,7 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
     }
   };
 
-  const submitButtonDisabled = loading || (!content && !Boolean(files.length));
+  const submitButtonDisabled = loading || (!content && !files.length);
   return (
     <Card>
       <FormProvider {...methods}>
@@ -143,14 +155,23 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="text">
-                <Textarea
-                  placeholder="Enter text or paste a link to share..."
-                  className="min-h-[120px] mb-4"
-                  {...register("content")}
-                />
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Enter text or paste a link to share..."
+                    className="min-h-[120px]"
+                    {...register("content")}
+                  />
+                  {errors.content && (
+                    <p className="text-sm text-destructive">
+                      {errors.content.message}
+                    </p>
+                  )}
+                </div>
               </TabsContent>
               <TabsContent value="image">
-                <UploadTab />
+                <div className="space-y-2">
+                  <UploadTab />
+                </div>
               </TabsContent>
             </Tabs>
             {success && (
@@ -163,7 +184,10 @@ const ShareContentCard = ({ targetServer }: ShareContentCardProps) => {
               </Alert>
             )}
             {errors.root && (
-              <Alert className="mb-4 mt-4" variant="destructive">
+              <Alert
+                className="mb-4 mt-4 bg-destructive-foreground"
+                variant="destructive"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{errors.root?.message}</AlertDescription>

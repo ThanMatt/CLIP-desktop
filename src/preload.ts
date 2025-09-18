@@ -45,4 +45,7 @@ contextBridge.exposeInMainWorld("api", {
     console.log("🚀 ~ payload:", payload);
     return ipcRenderer.invoke("respond-file-to-device", payload.fileData);
   },
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
 });

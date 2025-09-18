@@ -1,8 +1,20 @@
 import * as zod from "zod";
+import { isFileTypeAccepted, getDisplayFormats } from "../../lib/fileTypes";
 
 export const schema = zod
   .object({
-    content: zod.string().optional(),
+    content: zod
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          // If content is provided, it must not be empty
+          return !val || val.trim().length > 0;
+        },
+        {
+          message: "Content cannot be empty",
+        },
+      ),
     files: zod
       .array(
         zod
@@ -11,15 +23,32 @@ export const schema = zod
           })
           .refine(
             (file) => {
-              // :: Check if file is an image
-              return file.type.startsWith("image/");
+              // :: Check file size (max 10MB)
+              return file.size <= 10 * 1024 * 1024;
             },
             {
-              message: "Only image files are allowed",
-            }
+              message: "File size must be less than 10MB",
+            },
           )
+          .refine(
+            (file) => {
+              return isFileTypeAccepted(file);
+            },
+            {
+              message: `Only ${getDisplayFormats()} files are allowed`,
+            },
+          ),
       )
-      .optional(),
+      .optional()
+      .refine(
+        (files) => {
+          // If files are provided, limit to 1 file only
+          return !files || files.length <= 1;
+        },
+        {
+          message: "Only 1 file allowed for now",
+        },
+      ),
   })
   .refine(
     (data) => {
@@ -32,6 +61,6 @@ export const schema = zod
     {
       message: "You must provide either text content or upload files",
       path: ["root"], // :: This sets the error at the form level
-    }
+    },
   );
 export type ShareContentFormData = zod.infer<typeof schema>;

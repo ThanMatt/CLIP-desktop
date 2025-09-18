@@ -12,7 +12,7 @@ export class SettingsManager {
     this.settings = {
       isDiscoverable: true,
       serverIp: getServerIp(),
-      serverPort: Number(process.env.SERVER_PORT) || 5000,
+      serverPort: Number(process.env.SERVER_PORT) || 5050,
       launchOnStartup: false,
       darkMode: nativeTheme.shouldUseDarkColors,
       errorLogging: false,
@@ -23,10 +23,11 @@ export class SettingsManager {
   async load() {
     try {
       const data = await fs.readFile(this.settingsPath, "utf8");
-
-      this.settings.serverIp = getServerIp();
-      this.settings.serverPort = Number(process.env.SERVER_PORT) || 5000;
       this.settings = JSON.parse(data);
+
+      // Always update IP and port from current environment
+      this.settings.serverIp = getServerIp();
+      this.settings.serverPort = Number(process.env.SERVER_PORT) || 5050;
       this.save();
     } catch (error) {
       // :: If file doesn't exist, create it with default settings
@@ -38,7 +39,7 @@ export class SettingsManager {
   async save() {
     await fs.writeFile(
       this.settingsPath,
-      JSON.stringify(this.settings, null, 2)
+      JSON.stringify(this.settings, null, 2),
     );
   }
 
@@ -56,7 +57,7 @@ export class SettingsManager {
 
   async updateServerIp() {
     this.settings.serverIp = getServerIp();
-    this.settings.serverPort = Number(process.env.SERVER_PORT) || 5000;
+    this.settings.serverPort = Number(process.env.SERVER_PORT) || 5050;
 
     await this.save();
   }
