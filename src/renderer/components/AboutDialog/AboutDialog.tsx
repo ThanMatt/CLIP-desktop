@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { ExternalLink, Github } from "lucide-react";
+import { UpdateIndicator } from "../UpdateIndicator";
 
 type AboutDialogProps = {
   isOpen: boolean;
@@ -50,6 +51,8 @@ const AboutDialog = ({ isOpen, onClose }: AboutDialogProps) => {
               Similar to Apple's AirDrop
             </p>
           </div>
+
+          <UpdateIndicator />
 
           <div className="space-y-2">
             <Button

@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Lead } from "../ui/typography";
 import { Settings } from "../../../types";
 import { SettingItem } from "../SettingItem";
+import { UpdateIndicator } from "../UpdateIndicator";
 
 type SettingsPopoverProps = {
   settings: Settings;
@@ -28,7 +29,10 @@ const SettingsPopover = ({
       </PopoverTrigger>
       <PopoverContent align="end" className="p-4" sideOffset={5}>
         <div className="space-y-4">
-          <Lead>Settings</Lead>
+          <div className="flex items-center justify-between">
+            <Lead>Settings</Lead>
+            <UpdateIndicator compact />
+          </div>
           <div className="space-y-2">
             <SettingItem
               label="Dark mode"

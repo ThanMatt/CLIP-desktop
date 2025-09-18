@@ -22,6 +22,7 @@ import { ClipDiscoveryService } from "./services/ClipDiscoveryService";
 import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
+import { UpdateCheckerService } from "./services/UpdateCheckerService";
 import {
   FilePayload,
   IpcResponse,
@@ -73,6 +74,7 @@ let tray;
 
 const settingsManager = new SettingsManager();
 const discoveryService = new ClipDiscoveryService(port, settingsManager);
+const updateChecker = new UpdateCheckerService(app.getVersion());
 
 app.setLoginItemSettings({
   openAtLogin: settingsManager.getLaunchOnStartup(),
@@ -251,7 +253,9 @@ function setupExpressRoutes() {
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ success: false, message: "File not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found" });
     }
 
     // Serve the file
@@ -421,6 +425,24 @@ function setupIpcHandlers() {
       success: true,
       message: "Success",
     };
+  });
+
+  // :: Check for updates
+  ipcMain.handle("check-for-updates", async () => {
+    try {
+      const updateInfo = await updateChecker.checkForUpdates();
+      return {
+        success: true,
+        message: "Success",
+        data: updateInfo,
+      };
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+      return {
+        success: false,
+        message: "Failed to check for updates",
+      };
+    }
   });
 }
 
