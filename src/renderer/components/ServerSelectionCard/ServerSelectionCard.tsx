@@ -33,6 +33,7 @@ const ServerSelectionCard = ({
   const [dots, setDots] = useState("");
   const [, setErrors] = useState<string | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [hasUpdate, setHasUpdate] = useState(false);
 
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
 
@@ -114,6 +115,21 @@ const ServerSelectionCard = ({
     }
   }, [servers]);
 
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const response = await window.api.checkForUpdates();
+        if (response.success && response.data.hasUpdate) {
+          setHasUpdate(true);
+        }
+      } catch (error) {
+        console.error("Failed to check for updates:", error);
+      }
+    };
+
+    checkForUpdates();
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -169,18 +185,26 @@ const ServerSelectionCard = ({
                 className={cn("h-4 w-4", isScanning ? "animate-spin" : "")}
               />
             </Button>
-            <SettingsPopover
-              settings={settings}
-              onCheckedChange={(settingName, value) => {
-                if (settings) {
-                  onChangeSettings({
-                    ...settings,
-                    [settingName]: value,
-                  });
-                }
-              }}
-              onAboutClick={() => setIsAboutOpen(true)}
-            />
+            <div className="relative">
+              <SettingsPopover
+                settings={settings}
+                onCheckedChange={(settingName, value) => {
+                  if (settings) {
+                    onChangeSettings({
+                      ...settings,
+                      [settingName]: value,
+                    });
+                  }
+                }}
+                onAboutClick={() => {
+                  setIsAboutOpen(true);
+                  setHasUpdate(false); // Clear badge when opening About
+                }}
+              />
+              {hasUpdate && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-background animate-pulse" />
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -213,8 +237,13 @@ const ServerSelectionCard = ({
         </div>
       </CardContent>
       <AboutDialog
-        isOpen={isAboutOpen}
-        onClose={() => setIsAboutOpen(false)}
+        open={isAboutOpen}
+        onOpenChange={(open) => {
+          setIsAboutOpen(open);
+          if (open) {
+            setHasUpdate(false); // Clear badge when opening About
+          }
+        }}
       />
     </Card>
   );
