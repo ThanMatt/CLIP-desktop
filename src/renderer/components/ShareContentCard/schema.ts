@@ -1,4 +1,5 @@
 import * as zod from "zod";
+import { isFileTypeAccepted, getDisplayFormats } from "../../lib/fileTypes";
 
 export const schema = zod
   .object({
@@ -31,14 +32,10 @@ export const schema = zod
           )
           .refine(
             (file) => {
-              // :: Check if file is an image or PDF
-              return (
-                file.type.startsWith("image/") ||
-                file.type === "application/pdf"
-              );
+              return isFileTypeAccepted(file);
             },
             {
-              message: "Only image and PDF files are allowed",
+              message: `Only ${getDisplayFormats()} files are allowed`,
             },
           ),
       )
