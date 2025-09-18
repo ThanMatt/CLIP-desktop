@@ -7,6 +7,7 @@ import {
   Menu,
   nativeTheme,
   Notification,
+  shell,
   Tray,
 } from "electron";
 import path from "node:path";
@@ -403,6 +404,24 @@ function setupIpcHandlers() {
       }
     },
   );
+
+  // :: Get app version
+  ipcMain.handle("get-app-version", (): IpcResponse<string> => {
+    return {
+      success: true,
+      message: "Success",
+      data: app.getVersion(),
+    };
+  });
+
+  // :: Open external URL
+  ipcMain.handle("open-external", (_, url: string): IpcResponse<void> => {
+    shell.openExternal(url);
+    return {
+      success: true,
+      message: "Success",
+    };
+  });
 }
 
 app.on("ready", async () => {

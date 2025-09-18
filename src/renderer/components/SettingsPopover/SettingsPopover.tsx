@@ -1,4 +1,4 @@
-import { SettingsIcon } from "lucide-react";
+import { SettingsIcon, Info } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Lead } from "../ui/typography";
@@ -11,11 +11,13 @@ type SettingsPopoverProps = {
     settingName: keyof Settings,
     value: Settings[keyof Settings]
   ) => void;
+  onAboutClick: () => void;
 };
 
 const SettingsPopover = ({
   settings,
   onCheckedChange,
+  onAboutClick,
 }: SettingsPopoverProps) => {
   return (
     <Popover>
@@ -66,6 +68,17 @@ const SettingsPopover = ({
               }}
               checked={!!settings?.minimizeOnClose}
             />
+          </div>
+
+          <div className="pt-2 border-t">
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={onAboutClick}
+            >
+              <Info className="h-4 w-4 mr-2" />
+              About
+            </Button>
           </div>
         </div>
       </PopoverContent>

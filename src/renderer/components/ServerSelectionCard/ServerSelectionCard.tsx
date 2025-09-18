@@ -15,6 +15,7 @@ import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";
 import { cn } from "@/lib/utils";
 import { SettingsPopover } from "../SettingsPopover";
+import { AboutDialog } from "../AboutDialog";
 
 type ServerSelectionCardProps = {
   onTargetServer: (server: Server | null) => void;
@@ -31,6 +32,7 @@ const ServerSelectionCard = ({
   const [servers, setServers] = useState<Server[] | null>(null);
   const [dots, setDots] = useState("");
   const [, setErrors] = useState<string | null>(null);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
 
@@ -177,6 +179,7 @@ const ServerSelectionCard = ({
                   });
                 }
               }}
+              onAboutClick={() => setIsAboutOpen(true)}
             />
           </div>
         </div>
@@ -209,6 +212,10 @@ const ServerSelectionCard = ({
           </div>
         </div>
       </CardContent>
+      <AboutDialog
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+      />
     </Card>
   );
 };
