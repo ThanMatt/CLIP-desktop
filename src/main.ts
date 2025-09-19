@@ -75,6 +75,7 @@ let tray;
 const settingsManager = new SettingsManager();
 const discoveryService = new ClipDiscoveryService(port, settingsManager);
 const updateChecker = new UpdateCheckerService(app.getVersion());
+let clipService: ClipService;
 
 app.setLoginItemSettings({
   openAtLogin: settingsManager.getLaunchOnStartup(),
@@ -92,6 +93,9 @@ const createWindow = () => {
     },
     icon: "../assets/icons/icon.png",
   });
+
+  // :: Initialize ClipService after mainWindow is created
+  clipService = new ClipService(mainWindow);
 
   if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     Menu.setApplicationMenu(null);
@@ -166,14 +170,35 @@ function setupExpressRoutes() {
   });
 
   // :: Receive text FROM phone devices or clip servers
-  expressApp.post("/api/text", (req, res) => {
-    const { content } = req.body;
-    const deviceName = req.body.device_name ?? "Device";
-    const clipService = new ClipService(mainWindow);
+  expressApp.post("/api/text", async (req, res) => {
+    try {
+      const { content } = req.body;
+      const deviceName = req.body.device_name ?? "Device";
 
-    clipService.receiveTextContent(content, deviceName);
+      // :: Request confirmation from user
+      const confirmed = await clipService.confirmContent(
+        content,
+        deviceName,
+        "text",
+      );
 
-    return res.status(200).json({ success: true });
+      if (confirmed) {
+        // :: User accepted - process the content
+        clipService.receiveTextContent(content, deviceName);
+        return res
+          .status(200)
+          .json({ success: true, message: "Content accepted" });
+      } else {
+        return res
+          .status(200)
+          .json({ success: false, message: "Content declined by user" });
+      }
+    } catch (error) {
+      console.error("Content confirmation error:", error);
+      return res
+        .status(200)
+        .json({ success: false, message: "Confirmation timeout or error" });
+    }
   });
 
   // :: Long polling
@@ -444,6 +469,18 @@ function setupIpcHandlers() {
       };
     }
   });
+
+  // :: Respond to content confirmation
+  ipcMain.handle(
+    "respond-to-content-confirmation",
+    (_, confirmationId: string, accepted: boolean) => {
+      clipService.respondToConfirmation(confirmationId, accepted);
+      return {
+        success: true,
+        message: "Response recorded",
+      };
+    },
+  );
 }
 
 app.on("ready", async () => {

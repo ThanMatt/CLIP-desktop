@@ -9,12 +9,57 @@ import {
 import path from "node:path";
 import fs from "fs";
 import { FilePayload } from "src/types";
+import { v4 as uuidv4 } from "uuid";
 
 export class ClipService {
   public mainWindow: BrowserWindow;
+  private pendingConfirmations = new Map<
+    string,
+    {
+      resolve: (value: boolean) => void;
+      reject: (reason: any) => void;
+    }
+  >();
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow;
+  }
+
+  confirmContent(
+    content: string,
+    deviceName: string,
+    contentType: "text" | "file" = "text",
+  ): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const confirmationId = uuidv4();
+
+      // :: Store the promise resolvers
+      this.pendingConfirmations.set(confirmationId, { resolve, reject });
+
+      // :: Send confirmation request to renderer
+      this.mainWindow.webContents.send("content-confirmation-request", {
+        id: confirmationId,
+        content,
+        deviceName,
+        contentType,
+      });
+
+      // :: Set timeout for confirmation (30 seconds)
+      setTimeout(() => {
+        if (this.pendingConfirmations.has(confirmationId)) {
+          this.pendingConfirmations.delete(confirmationId);
+          reject(new Error("Confirmation timeout"));
+        }
+      }, 30000);
+    });
+  }
+
+  respondToConfirmation(confirmationId: string, accepted: boolean) {
+    const pending = this.pendingConfirmations.get(confirmationId);
+    if (pending) {
+      this.pendingConfirmations.delete(confirmationId);
+      pending.resolve(accepted);
+    }
   }
 
   receiveTextContent(content: string, deviceName = "Device") {

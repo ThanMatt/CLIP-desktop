@@ -48,4 +48,9 @@ contextBridge.exposeInMainWorld("api", {
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  onContentConfirmationRequest: (callback: Callback<any>) => {
+    ipcRenderer.on("content-confirmation-request", (event, data) => callback(data));
+  },
+  respondToContentConfirmation: (id: string, accepted: boolean) =>
+    ipcRenderer.invoke("respond-to-content-confirmation", id, accepted),
 });
