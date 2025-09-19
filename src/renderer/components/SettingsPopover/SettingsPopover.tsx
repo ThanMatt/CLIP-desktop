@@ -1,4 +1,4 @@
-import { SettingsIcon, Info } from "lucide-react";
+import { SettingsIcon, Info, FileText } from "lucide-react";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Lead } from "../ui/typography";
@@ -13,12 +13,14 @@ type SettingsPopoverProps = {
     value: Settings[keyof Settings]
   ) => void;
   onAboutClick: () => void;
+  onLogsClick: () => void;
 };
 
 const SettingsPopover = ({
   settings,
   onCheckedChange,
   onAboutClick,
+  onLogsClick,
 }: SettingsPopoverProps) => {
   return (
     <Popover>
@@ -74,7 +76,15 @@ const SettingsPopover = ({
             />
           </div>
 
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t space-y-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={onLogsClick}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Activity Logs
+            </Button>
             <Button
               variant="ghost"
               className="w-full justify-start"

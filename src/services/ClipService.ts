@@ -10,9 +10,11 @@ import path from "node:path";
 import fs from "fs";
 import { FilePayload } from "src/types";
 import { v4 as uuidv4 } from "uuid";
+import { LogsService } from "./LogsService";
 
 export class ClipService {
   public mainWindow: BrowserWindow;
+  private logsService: LogsService;
   private pendingConfirmations = new Map<
     string,
     {
@@ -21,8 +23,9 @@ export class ClipService {
     }
   >();
 
-  constructor(mainWindow: BrowserWindow) {
+  constructor(mainWindow: BrowserWindow, logsService: LogsService) {
     this.mainWindow = mainWindow;
+    this.logsService = logsService;
   }
 
   confirmContent(
@@ -62,33 +65,55 @@ export class ClipService {
     }
   }
 
-  receiveTextContent(content: string, deviceName = "Device") {
+  async receiveTextContent(content: string, deviceName = "Device") {
     console.log(`Data received from ${deviceName}: ${content}`);
 
-    // :: Write to clipboard
-    clipboard.writeText(content);
+    try {
+      // :: Write to clipboard
+      clipboard.writeText(content);
 
-    // :: Send notification
-    new Notification({
-      title: `New content from ${deviceName}`,
-      body: `Content: ${content}`,
-    }).show();
-
-    // :: Notify renderer process
-    if (this.mainWindow) {
-      this.mainWindow.webContents.send("text-received", {
-        content,
+      // :: Log successful reception
+      await this.logsService.logContent(
+        "received",
         deviceName,
-      });
-    }
+        content,
+        "text",
+        "success"
+      );
 
-    // :: Open URL if it's a link
-    if (content.startsWith("https") || content.startsWith("http")) {
-      console.log("Link detected, opening the url in your default browser!");
-      shell.openExternal(content);
-    }
+      // :: Send notification
+      new Notification({
+        title: `New content from ${deviceName}`,
+        body: `Content: ${content}`,
+      }).show();
 
-    console.log("Notification sent!");
+      // :: Notify renderer process
+      if (this.mainWindow) {
+        this.mainWindow.webContents.send("text-received", {
+          content,
+          deviceName,
+        });
+      }
+
+      // :: Open URL if it's a link
+      if (content.startsWith("https") || content.startsWith("http")) {
+        console.log("Link detected, opening the url in your default browser!");
+        shell.openExternal(content);
+      }
+
+      console.log("Notification sent!");
+    } catch (error) {
+      console.error("Error processing received content:", error);
+
+      // :: Log failed reception
+      await this.logsService.logContent(
+        "received",
+        deviceName,
+        content,
+        "text",
+        "failed"
+      );
+    }
   }
   respondContentToDevice(
     content: string,

@@ -53,4 +53,7 @@ contextBridge.exposeInMainWorld("api", {
   },
   respondToContentConfirmation: (id: string, accepted: boolean) =>
     ipcRenderer.invoke("respond-to-content-confirmation", id, accepted),
+  getLogs: (filter?: any) => ipcRenderer.invoke("get-logs", filter),
+  getLogsCount: (filter?: any) => ipcRenderer.invoke("get-logs-count", filter),
+  clearLogs: () => ipcRenderer.invoke("clear-logs"),
 });

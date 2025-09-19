@@ -16,6 +16,7 @@ import { Label } from "../ui/label";
 import { cn } from "@/lib/utils";
 import { SettingsPopover } from "../SettingsPopover";
 import { AboutDialog } from "../AboutDialog";
+import { LogsDialog } from "../LogsDialog";
 
 type ServerSelectionCardProps = {
   onTargetServer: (server: Server | null) => void;
@@ -33,6 +34,7 @@ const ServerSelectionCard = ({
   const [dots, setDots] = useState("");
   const [, setErrors] = useState<string | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
 
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -200,6 +202,7 @@ const ServerSelectionCard = ({
                   setIsAboutOpen(true);
                   setHasUpdate(false); // Clear badge when opening About
                 }}
+                onLogsClick={() => setIsLogsOpen(true)}
               />
               {hasUpdate && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-background animate-pulse" />
@@ -244,6 +247,10 @@ const ServerSelectionCard = ({
             setHasUpdate(false); // Clear badge when opening About
           }
         }}
+      />
+      <LogsDialog
+        open={isLogsOpen}
+        onOpenChange={setIsLogsOpen}
       />
     </Card>
   );

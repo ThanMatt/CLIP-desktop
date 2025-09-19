@@ -23,6 +23,7 @@ import { SettingsManager } from "./services/SettingsManagerService";
 import { getServerIp } from "./utils";
 import { ClipService } from "./services/ClipService";
 import { UpdateCheckerService } from "./services/UpdateCheckerService";
+import { LogsService } from "./services/LogsService";
 import {
   FilePayload,
   IpcResponse,
@@ -75,6 +76,7 @@ let tray;
 const settingsManager = new SettingsManager();
 const discoveryService = new ClipDiscoveryService(port, settingsManager);
 const updateChecker = new UpdateCheckerService(app.getVersion());
+const logsService = new LogsService();
 let clipService: ClipService;
 
 app.setLoginItemSettings({
@@ -95,7 +97,7 @@ const createWindow = () => {
   });
 
   // :: Initialize ClipService after mainWindow is created
-  clipService = new ClipService(mainWindow);
+  clipService = new ClipService(mainWindow, logsService);
 
   if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     Menu.setApplicationMenu(null);
@@ -189,6 +191,14 @@ function setupExpressRoutes() {
           .status(200)
           .json({ success: true, message: "Content accepted" });
       } else {
+        // :: Log declined content
+        await logsService.logContent(
+          "declined",
+          deviceName,
+          content,
+          "text",
+          "declined"
+        );
         return res
           .status(200)
           .json({ success: false, message: "Content declined by user" });
@@ -481,10 +491,64 @@ function setupIpcHandlers() {
       };
     },
   );
+
+  // :: Get logs
+  ipcMain.handle("get-logs", async (_, filter = {}) => {
+    try {
+      const logs = await logsService.getLogs(filter);
+      return {
+        success: true,
+        message: "Success",
+        data: logs,
+      };
+    } catch (error) {
+      console.error("Failed to get logs:", error);
+      return {
+        success: false,
+        message: "Failed to get logs",
+      };
+    }
+  });
+
+  // :: Get logs count
+  ipcMain.handle("get-logs-count", async (_, filter = {}) => {
+    try {
+      const count = await logsService.getLogsCount(filter);
+      return {
+        success: true,
+        message: "Success",
+        data: count,
+      };
+    } catch (error) {
+      console.error("Failed to get logs count:", error);
+      return {
+        success: false,
+        message: "Failed to get logs count",
+      };
+    }
+  });
+
+  // :: Clear logs
+  ipcMain.handle("clear-logs", async () => {
+    try {
+      await logsService.clearLogs();
+      return {
+        success: true,
+        message: "Logs cleared successfully",
+      };
+    } catch (error) {
+      console.error("Failed to clear logs:", error);
+      return {
+        success: false,
+        message: "Failed to clear logs",
+      };
+    }
+  });
 }
 
 app.on("ready", async () => {
   await settingsManager.load();
+  await logsService.initialize();
   createWindow();
   setupExpressRoutes();
   setupIpcHandlers();
@@ -515,6 +579,7 @@ app.on("window-all-closed", () => {
 // :: Clean up on quit
 app.on("will-quit", () => {
   discoveryService.stop();
+  logsService.close();
 });
 
 app.whenReady().then(() => {
