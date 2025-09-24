@@ -15,7 +15,7 @@ import {
   Trash2,
   Upload,
   X,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,6 +25,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "../ui/pagination";
 
 interface ContentLog {
   id: number;
@@ -54,15 +70,21 @@ type LogsDialogProps = {
 const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
   const [logs, setLogs] = useState<ContentLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [filter, setFilter] = useState<LogsFilter>({ limit: 50 });
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10); // Items per page
+  const [filter, setFilter] = useState<LogsFilter>({ limit: 10, offset: 0 });
   const [searchDevice, setSearchDevice] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedContentType, setSelectedContentType] = useState<string>("all");
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (page: number = currentPage) => {
     setIsLoading(true);
     try {
-      const filterParams: LogsFilter = { ...filter };
+      const filterParams: LogsFilter = {
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      };
 
       if (searchDevice) {
         filterParams.deviceName = searchDevice;
@@ -76,9 +98,18 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
         filterParams.contentType = selectedContentType as "text" | "file";
       }
 
-      const response = await window.api.getLogs(filterParams);
-      if (response.success) {
-        setLogs(response.data);
+      // Fetch both logs and total count
+      const [logsResponse, countResponse] = await Promise.all([
+        window.api.getLogs(filterParams),
+        window.api.getLogsCount(filterParams),
+      ]);
+
+      if (logsResponse.success) {
+        setLogs(logsResponse.data);
+      }
+
+      if (countResponse.success) {
+        setTotalCount(countResponse.data);
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
@@ -88,11 +119,17 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
   };
 
   const clearAllLogs = async () => {
-    if (confirm("Are you sure you want to clear all logs? This action cannot be undone.")) {
+    if (
+      confirm(
+        "Are you sure you want to clear all logs? This action cannot be undone.",
+      )
+    ) {
       try {
         const response = await window.api.clearLogs();
         if (response.success) {
           setLogs([]);
+          setTotalCount(0);
+          setCurrentPage(1);
         }
       } catch (error) {
         console.error("Failed to clear logs:", error);
@@ -100,11 +137,21 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchLogs(page);
+  };
+
+  const resetToFirstPage = () => {
+    setCurrentPage(1);
+    fetchLogs(1);
+  };
+
   useEffect(() => {
     if (open) {
-      fetchLogs();
+      resetToFirstPage();
     }
-  }, [open, filter, searchDevice, selectedType, selectedContentType]);
+  }, [open, searchDevice, selectedType, selectedContentType]);
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
@@ -132,7 +179,40 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
   };
 
   const truncateContent = (content: string, maxLength = 60) => {
-    return content.length > maxLength ? content.substring(0, maxLength) + "..." : content;
+    return content.length > maxLength
+      ? content.substring(0, maxLength) + "..."
+      : content;
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
+
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <PaginationItem key={page}>
+          <PaginationLink
+            isActive={page === currentPage}
+            onClick={() => handlePageChange(page)}
+            className="cursor-pointer"
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>,
+      );
+    }
+
+    return items;
   };
 
   return (
@@ -162,36 +242,46 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="type-filter">Type:</Label>
-            <select
-              id="type-filter"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="px-3 py-1 border rounded-md text-sm"
-            >
-              <option value="all">All</option>
-              <option value="sent">Sent</option>
-              <option value="received">Received</option>
-              <option value="declined">Declined</option>
-            </select>
+            <Label>Type:</Label>
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="received">Received</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="content-type-filter">Content:</Label>
-            <select
-              id="content-type-filter"
+            <Label>Content:</Label>
+            <Select
               value={selectedContentType}
-              onChange={(e) => setSelectedContentType(e.target.value)}
-              className="px-3 py-1 border rounded-md text-sm"
+              onValueChange={setSelectedContentType}
             >
-              <option value="all">All</option>
-              <option value="text">Text</option>
-              <option value="file">File</option>
-            </select>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Select content" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="file">File</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <Button variant="outline" size="sm" onClick={fetchLogs} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchLogs}
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -241,8 +331,8 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
                         log.type === "sent"
                           ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                           : log.type === "received"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                          : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                       }`}
                     >
                       {log.type}
@@ -264,6 +354,76 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
           )}
         </div>
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2">
+            <div className="text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, totalCount)} of {totalCount}{" "}
+              entries
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    className={`cursor-pointer ${!hasPreviousPage ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() =>
+                      hasPreviousPage && handlePageChange(currentPage - 1)
+                    }
+                  />
+                </PaginationItem>
+
+                {currentPage > 3 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationLink
+                        onClick={() => handlePageChange(1)}
+                        className="cursor-pointer"
+                      >
+                        1
+                      </PaginationLink>
+                    </PaginationItem>
+                    {currentPage > 4 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
+                  </>
+                )}
+
+                {renderPaginationItems()}
+
+                {currentPage < totalPages - 2 && (
+                  <>
+                    {currentPage < totalPages - 3 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
+                    <PaginationItem>
+                      <PaginationLink
+                        onClick={() => handlePageChange(totalPages)}
+                        className="cursor-pointer"
+                      >
+                        {totalPages}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    className={`cursor-pointer ${!hasNextPage ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() =>
+                      hasNextPage && handlePageChange(currentPage + 1)
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+
         <DialogFooter className="flex justify-between">
           <Button variant="destructive" onClick={clearAllLogs} size="sm">
             <Trash2 className="h-4 w-4 mr-1" />
@@ -282,3 +442,4 @@ const LogsDialog = ({ open, onOpenChange }: LogsDialogProps) => {
 };
 
 export default LogsDialog;
+
